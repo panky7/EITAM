@@ -5,6 +5,7 @@ import {
   capabilityRows,
   capabilityRoiSummary,
   modelScopePreset,
+  scopeWikiRows,
   scopedCapabilityRoiSummary,
 } from './capabilityRoi';
 
@@ -144,5 +145,29 @@ describe('capabilityMaturitySummary', () => {
       projected: 2.25,
       target: 3,
     });
+  });
+});
+
+describe('scopeWikiRows', () => {
+  it('returns independent scope wiki rows with cost, benefit, highlights and boundary detail', () => {
+    const rows = scopeWikiRows();
+
+    expect(rows).toHaveLength(6);
+    expect(rows[0]).toMatchObject({
+      name: 'Hardware',
+      costSEK: 8_625_000,
+      benefitSEK: 19_250_000,
+      highlights: [
+        'Reduced enterprise risk',
+        'Incident response uplift',
+        'Central asset mapping',
+      ],
+    });
+    expect(rows[0].inScope).toContain(
+      'Automate and integrate discovery across remaining asset tools including Zebra, HP, Canon, Kandji and SCCM.',
+    );
+    expect(rows[0].outOfScope).toBe(
+      'Predictive lifecycle management and broader asset intelligence analytics.',
+    );
   });
 });

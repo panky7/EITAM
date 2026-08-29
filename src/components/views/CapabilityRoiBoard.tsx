@@ -1,13 +1,11 @@
 import { useMemo, useState } from 'react';
 import {
   BadgeCheck,
+  ChevronDown,
   Coins,
-  HeartHandshake,
   Laptop,
-  MonitorCheck,
   Network,
   Rocket,
-  Router,
   Shield,
   ShieldCheck,
   Wrench,
@@ -18,6 +16,7 @@ import {
   capabilityMaturitySummary,
   capabilityRows,
   modelScopePreset,
+  scopeWikiRows,
   type ModelScopePresetId,
   scopedCapabilityRoiSummary,
 } from '../../lib/capabilityRoi';
@@ -68,33 +67,6 @@ const topMetrics = [
   },
 ];
 
-const achievements = [
-  {
-    label: 'Endpoint foundation proven',
-    detail: 'Managed laptops and physical devices now reliable enough to build from.',
-    value: '90%+',
-    icon: MonitorCheck,
-  },
-  {
-    label: 'Network inventory uplifted',
-    detail: 'Managed network gear visibility now supports stronger operational control.',
-    value: '90%+',
-    icon: Router,
-  },
-  {
-    label: 'Value already unlocked',
-    detail: 'License and unused-device opportunities identified.',
-    value: '10M SEK',
-    icon: Coins,
-  },
-  {
-    label: 'Business ownership validated',
-    detail: 'Business-owner acknowledgement for improved asset data quality.',
-    value: 'Strong',
-    icon: HeartHandshake,
-  },
-];
-
 function maturityPosition(maturity: number): string {
   return `${Math.max(0, Math.min(100, ((maturity - 1) / 4) * 100))}%`;
 }
@@ -116,6 +88,7 @@ export function CapabilityRoiBoard() {
     () => capabilityMaturitySummary(rows),
     [rows],
   );
+  const wikiRows = useMemo(() => scopeWikiRows(), []);
 
   const toggleWorkstream = (workstreamId: WorkstreamId) => {
     setSelectedWorkstreamIds((current) => {
@@ -336,48 +309,7 @@ export function CapabilityRoiBoard() {
         </div>
       </section>
 
-      <section className="grid gap-4 lg:grid-cols-2">
-          <div className="rounded-lg border border-stone-200 bg-white p-4 shadow-sm shadow-stone-200/70">
-            <div className="text-sm font-semibold uppercase tracking-wide" style={{ color: INK }}>
-              Evidence now visible
-            </div>
-            <div className="mt-3 space-y-3">
-              {achievements.map((achievement) => {
-                const Icon = achievement.icon;
-
-                return (
-                  <div key={achievement.label} className="grid grid-cols-[32px_minmax(0,1fr)_auto] items-center gap-3 border-b border-stone-100 pb-3 last:border-0 last:pb-0">
-                    <div className="grid h-8 w-8 place-items-center rounded-md bg-green-50 text-green-700">
-                      <Icon size={16} />
-                    </div>
-                    <div className="min-w-0">
-                      <div className="text-sm font-semibold" style={{ color: INK }}>
-                        {achievement.label}
-                      </div>
-                      <div className="mt-0.5 text-xs leading-5 text-slate-500">
-                        {achievement.detail}
-                      </div>
-                    </div>
-                    <div className="font-mono text-xs font-semibold tabular-nums" style={{ color: INK }}>
-                      {achievement.value}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-
-          <div className="rounded-lg border border-stone-200 bg-white p-4 shadow-sm shadow-stone-200/70">
-            <div className="text-sm font-semibold uppercase tracking-wide" style={{ color: INK }}>
-              Roadmap reading
-            </div>
-            <p className="mt-3 text-sm leading-6 text-slate-600">
-              The detailed timeline below keeps every roadmap item visible and
-              links the plan back to the same modeled investment, maturity and
-              value pillars shown above.
-            </p>
-          </div>
-      </section>
+      <ScopeWiki rows={wikiRows} />
 
       <InteractiveRoadmapTimeline
         budgetSEK={budgetSEK}
@@ -388,6 +320,101 @@ export function CapabilityRoiBoard() {
 
       <MaturityDeck rows={rows} maturity={maturity} />
     </div>
+  );
+}
+
+function ScopeWiki({
+  rows,
+}: {
+  rows: ReturnType<typeof scopeWikiRows>;
+}) {
+  return (
+    <details className="group rounded-lg border border-stone-200 bg-white p-4 shadow-sm shadow-stone-200/70">
+      <summary className="flex cursor-pointer list-none items-center justify-between gap-3">
+        <div className="flex min-w-0 flex-wrap gap-2">
+          {rows.map((row) => (
+            <span
+              key={row.id}
+              className="rounded-md border border-stone-200 bg-stone-50 px-3 py-2 text-xs font-semibold"
+              style={{ color: INK }}
+            >
+              {row.name}
+            </span>
+          ))}
+        </div>
+        <ChevronDown
+          className="shrink-0 text-slate-500 transition group-open:rotate-180"
+          size={18}
+          aria-hidden="true"
+        />
+      </summary>
+
+      <div className="mt-4 grid gap-3 lg:grid-cols-2">
+        {rows.map((row) => (
+          <article
+            key={row.id}
+            className="rounded-lg border border-stone-200 bg-[#FAFAF8] p-4"
+          >
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div>
+                <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                  {row.short}
+                </div>
+                <h3 className="mt-1 text-base font-semibold" style={{ color: INK }}>
+                  {row.name}
+                </h3>
+              </div>
+              <div className="grid grid-cols-2 gap-2 text-right text-[11px] text-slate-500">
+                <div>
+                  Cost
+                  <strong className="block font-mono text-xs text-slate-950">
+                    {fmtM(row.costSEK)}
+                  </strong>
+                </div>
+                <div>
+                  Value
+                  <strong className="block font-mono text-xs text-slate-950">
+                    {fmtM(row.benefitSEK)}
+                  </strong>
+                </div>
+              </div>
+            </div>
+
+            <p className="mt-3 text-sm leading-6 text-slate-600">{row.summary}</p>
+
+            <div className="mt-3 flex flex-wrap gap-2">
+              {row.highlights.map((highlight) => (
+                <span
+                  key={highlight}
+                  className="rounded-full bg-green-50 px-2.5 py-1 text-[11px] font-medium text-green-800"
+                >
+                  {highlight}
+                </span>
+              ))}
+            </div>
+
+            <div className="mt-4 grid gap-3 md:grid-cols-2">
+              <div>
+                <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                  In scope
+                </div>
+                <ul className="mt-2 space-y-1.5 text-xs leading-5 text-slate-600">
+                  {row.inScope.map((item) => (
+                    <li key={item}>{item}</li>
+                  ))}
+                </ul>
+              </div>
+              <div>
+                <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                  Beyond year one
+                </div>
+                <p className="mt-2 text-xs leading-5 text-slate-600">{row.outOfScope}</p>
+              </div>
+            </div>
+          </article>
+        ))}
+      </div>
+    </details>
   );
 }
 

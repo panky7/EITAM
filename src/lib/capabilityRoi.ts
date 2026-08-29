@@ -49,6 +49,18 @@ export interface CapabilityRow {
   returnSignalPct: number;
 }
 
+export interface ScopeWikiRow {
+  id: WorkstreamId;
+  name: string;
+  short: string;
+  costSEK: number;
+  benefitSEK: number;
+  summary: string;
+  inScope: string[];
+  outOfScope: string;
+  highlights: string[];
+}
+
 const CURRENT_MATURITY = 1;
 const TARGET_MATURITY = 3;
 const MAX_SECURITY_REDUCTION_PCT = 20;
@@ -253,4 +265,18 @@ export function capabilityMaturitySummary(rows: CapabilityRow[]): CapabilityMatu
     projected: Number(projected.toFixed(2)),
     target: TARGET_MATURITY,
   };
+}
+
+export function scopeWikiRows(): ScopeWikiRow[] {
+  return WORKSTREAMS.map((workstream) => ({
+    id: workstream.id,
+    name: workstream.name,
+    short: workstream.short,
+    costSEK: workstream.costSEK,
+    benefitSEK: workstream.benefitSEK,
+    summary: workstream.yearOneOutcome,
+    inScope: workstream.scopeItems,
+    outOfScope: workstream.yearTwoOutcome,
+    highlights: workstream.valueHighlights.map((highlight) => highlight.label),
+  }));
 }
