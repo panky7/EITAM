@@ -1,9 +1,12 @@
 import { useMemo, useState } from 'react';
 import {
   BadgeCheck,
+  BarChart3,
   ChevronDown,
   Coins,
+  Database,
   Laptop,
+  Layers3,
   Network,
   Rocket,
   Shield,
@@ -12,6 +15,10 @@ import {
 } from 'lucide-react';
 import { InteractiveRoadmapTimeline } from '../InteractiveRoadmapTimeline';
 import { TOTAL_FULL_COST } from '../../data/derived';
+import {
+  ROADMAP_KNOWLEDGE_CARDS,
+  type KnowledgeCard,
+} from '../../data/knowledgeDeck';
 import {
   capabilityMaturitySummary,
   capabilityRows,
@@ -68,6 +75,12 @@ const topMetrics = [
     color: WARN,
   },
 ];
+
+const knowledgeIcons: Record<KnowledgeCard['id'], typeof Layers3> = {
+  'category-outcomes': Layers3,
+  'data-thon': Database,
+  'value-framework': BarChart3,
+};
 
 function maturityPosition(maturity: number): string {
   return `${Math.max(0, Math.min(100, ((maturity - 1) / 4) * 100))}%`;
@@ -321,7 +334,126 @@ export function CapabilityRoiBoard() {
       />
 
       <MaturityDeck rows={rows} maturity={maturity} />
+
+      <KnowledgeDeck cards={ROADMAP_KNOWLEDGE_CARDS} />
     </div>
+  );
+}
+
+function KnowledgeDeck({ cards }: { cards: KnowledgeCard[] }) {
+  const [activeCardId, setActiveCardId] = useState<KnowledgeCard['id'] | null>(null);
+  const activeCard = cards.find((card) => card.id === activeCardId);
+
+  return (
+    <section className="overflow-hidden rounded-lg border border-stone-200 bg-white shadow-sm shadow-stone-200/70">
+      <div className="bg-[#071B4D] px-4 py-3 text-white">
+        <div className="text-sm font-semibold uppercase tracking-wide">
+          Enterprise Asset Management Knowledge Deck
+        </div>
+      </div>
+
+      <div className="grid gap-2 p-4 lg:grid-cols-3">
+        {cards.map((card) => {
+          const Icon = knowledgeIcons[card.id];
+          const active = card.id === activeCardId;
+
+          return (
+            <button
+              key={card.id}
+              type="button"
+              className={`flex min-h-20 items-center justify-between gap-3 rounded-lg border p-3 text-left transition ${
+                active
+                  ? 'border-[#071B4D] bg-[#071B4D] text-white shadow-md'
+                  : 'border-stone-200 bg-[#FAFAF8] text-slate-700 hover:border-slate-300'
+              }`}
+              aria-expanded={active}
+              onClick={() =>
+                setActiveCardId((current) => (current === card.id ? null : card.id))
+              }
+            >
+              <span className="flex min-w-0 items-center gap-3">
+                <span
+                  className={`grid h-9 w-9 shrink-0 place-items-center rounded-md ${
+                    active ? 'bg-white/10 text-green-200' : 'bg-green-50 text-green-700'
+                  }`}
+                >
+                  <Icon size={18} />
+                </span>
+                <span className="min-w-0">
+                  <span className="block text-sm font-semibold">{card.title}</span>
+                  <span className={`mt-1 block text-xs ${active ? 'text-white/75' : 'text-slate-500'}`}>
+                    {card.summary}
+                  </span>
+                </span>
+              </span>
+              <ChevronDown
+                className={`shrink-0 transition ${active ? 'rotate-180' : ''}`}
+                size={16}
+                aria-hidden="true"
+              />
+            </button>
+          );
+        })}
+      </div>
+
+      {activeCard ? <KnowledgeDeckDetail card={activeCard} /> : null}
+    </section>
+  );
+}
+
+function KnowledgeDeckDetail({ card }: { card: KnowledgeCard }) {
+  return (
+    <article className="border-t border-stone-200 bg-[#FAFAF8] p-4">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+            {card.eyebrow}
+          </div>
+          <h3 className="mt-1 text-lg font-semibold" style={{ color: INK }}>
+            {card.title}
+          </h3>
+        </div>
+        <div className="rounded-full bg-green-50 px-3 py-1 text-xs font-semibold text-green-800">
+          Board-ready
+        </div>
+      </div>
+
+      <p className="mt-3 max-w-5xl text-sm leading-6 text-slate-600">{card.lead}</p>
+
+      <div className="mt-4 grid gap-3 lg:grid-cols-3">
+        {card.columns.map((column) => (
+          <div key={column.title} className="rounded-lg border border-stone-200 bg-white p-3">
+            <div className="text-sm font-semibold" style={{ color: INK }}>
+              {column.title}
+            </div>
+            <ul className="mt-2 space-y-1.5 text-xs leading-5 text-slate-600">
+              {column.points.map((point) => (
+                <li key={point}>{point}</li>
+              ))}
+            </ul>
+            {column.metrics ? (
+              <div className="mt-3 grid gap-2">
+                {column.metrics.map((metric) => (
+                  <div
+                    key={metric.label}
+                    className="flex items-center justify-between gap-3 rounded-md bg-stone-50 px-2.5 py-2 text-xs"
+                  >
+                    <span className="text-slate-500">{metric.label}</span>
+                    <strong className="text-right font-mono text-slate-950">
+                      {metric.target}
+                    </strong>
+                  </div>
+                ))}
+              </div>
+            ) : null}
+          </div>
+        ))}
+      </div>
+
+      <div className="mt-4 border-l-4 border-green-700 bg-white px-3 py-2 text-sm leading-6 text-slate-700">
+        {card.outcome}
+      </div>
+    </article>
   );
 }
 
