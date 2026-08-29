@@ -331,76 +331,7 @@ export function CapabilityRoiBoard() {
         </div>
       </section>
 
-      <section className="grid gap-4 xl:grid-cols-[minmax(0,1.45fr)_minmax(300px,0.8fr)]">
-        <div className="rounded-lg border border-stone-200 bg-white p-4 shadow-sm shadow-stone-200/70">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div className="text-sm font-semibold uppercase tracking-wide" style={{ color: INK }}>
-              Capability maturity backed by outcomes
-            </div>
-            <div className="text-xs text-slate-500">
-              Current 1.0 → projected {summary.maturity.projected.toFixed(1)}
-            </div>
-          </div>
-
-          <div className="mt-4 grid grid-cols-5 gap-2 text-center text-[11px] text-slate-500">
-            {['Ad hoc', 'Visible', 'Managed', 'Integrated', 'Optimized'].map((label, index) => (
-              <div key={label}>
-                <div className="mx-auto mb-1 grid h-6 w-6 place-items-center rounded-full bg-[#071B4D] text-xs font-semibold text-white">
-                  {index + 1}
-                </div>
-                {label}
-              </div>
-            ))}
-          </div>
-
-          <div className="mt-4 overflow-x-auto">
-            <table className="w-full min-w-[720px] border-collapse text-sm">
-              <thead>
-                <tr className="bg-[#071B4D] text-left text-xs uppercase tracking-wide text-white">
-                  <th className="px-3 py-2 font-medium">Capability</th>
-                  <th className="px-3 py-2 font-medium">Business outcome</th>
-                  <th className="px-3 py-2 font-medium">Current → projected</th>
-                  <th className="px-3 py-2 font-medium">Return signal</th>
-                </tr>
-              </thead>
-              <tbody>
-                {rows.map((row) => (
-                  <tr key={row.name} className="border-b border-stone-100 last:border-0">
-                    <td className="px-3 py-3 font-semibold" style={{ color: INK }}>
-                      {row.name}
-                    </td>
-                    <td className="px-3 py-3 text-slate-600">{row.outcome}</td>
-                    <td className="px-3 py-3">
-                      <div
-                        className="relative h-6 min-w-40"
-                        aria-label={`Current maturity ${row.currentMaturity.toFixed(1)} projected ${row.projectedMaturity.toFixed(1)}`}
-                      >
-                        <div className="absolute left-0 right-0 top-3 h-0.5 bg-slate-200" />
-                        <div className="absolute top-1.5 h-4 w-4 -translate-x-1/2 rounded-full border-2 border-white bg-[#2468C9] shadow" style={{ left: maturityPosition(row.currentMaturity) }} />
-                        <div className="absolute top-1.5 h-4 w-4 -translate-x-1/2 rounded-full border-2 border-white shadow transition-all" style={{ left: maturityPosition(row.projectedMaturity), backgroundColor: GOOD }} />
-                      </div>
-                    </td>
-                    <td className="px-3 py-3">
-                      <div className="flex items-center gap-2">
-                        <div className="h-2.5 flex-1 overflow-hidden rounded-full bg-slate-100">
-                          <div
-                            className="h-full rounded-full transition-all"
-                            style={{ width: `${row.returnSignalPct}%`, backgroundColor: GOOD }}
-                          />
-                        </div>
-                        <span className="w-10 text-right font-mono text-xs tabular-nums text-slate-500">
-                          {row.returnSignalPct}%
-                        </span>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        <aside className="grid gap-4">
+      <section className="grid gap-4 lg:grid-cols-2">
           <div className="rounded-lg border border-stone-200 bg-white p-4 shadow-sm shadow-stone-200/70">
             <div className="text-sm font-semibold uppercase tracking-wide" style={{ color: INK }}>
               Evidence now visible
@@ -441,7 +372,6 @@ export function CapabilityRoiBoard() {
               value pillars shown above.
             </p>
           </div>
-        </aside>
       </section>
 
       <InteractiveRoadmapTimeline
@@ -451,37 +381,7 @@ export function CapabilityRoiBoard() {
         scopeBenefitSEK={summary.scopeBenefitSEK}
       />
 
-      <section className="rounded-lg border border-stone-200 bg-white p-5 shadow-sm shadow-stone-200/70">
-        <div className="flex flex-wrap items-center justify-between gap-4">
-          <div>
-            <div className="text-sm font-semibold uppercase tracking-wide" style={{ color: INK }}>
-              Capability maturity end state
-            </div>
-            <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">
-              Maturity is shown last so the board closes on the business outcome:
-              selected scope moves from ad hoc visibility toward managed asset
-              management capability.
-            </p>
-          </div>
-          <div className="font-mono text-3xl font-semibold tabular-nums" style={{ color: INK }}>
-            {summary.maturity.current.toFixed(1)} -&gt; {summary.maturity.projected.toFixed(1)}
-          </div>
-        </div>
-        <div className="mt-4 grid grid-cols-5 gap-2 text-center text-xs text-slate-500">
-          {['Ad hoc', 'Visible', 'Managed', 'Integrated', 'Optimized'].map((label, index) => (
-            <div key={label} className="rounded-md bg-stone-50 px-2 py-3">
-              <div
-                className={`mx-auto mb-2 h-2 rounded-full ${
-                  index + 1 <= Math.floor(summary.maturity.projected)
-                    ? 'bg-[#587E1F]'
-                    : 'bg-stone-200'
-                }`}
-              />
-              {index + 1}. {label}
-            </div>
-          ))}
-        </div>
-      </section>
+      <MaturityDeck rows={rows} summary={summary} />
     </div>
   );
 }
@@ -509,5 +409,102 @@ function MetricCard({
         </div>
       </div>
     </div>
+  );
+}
+
+function MaturityDeck({
+  rows,
+  summary,
+}: {
+  rows: ReturnType<typeof capabilityRows>;
+  summary: ReturnType<typeof scopedCapabilityRoiSummary>;
+}) {
+  return (
+    <section className="rounded-lg border border-stone-200 bg-white p-4 shadow-sm shadow-stone-200/70">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <div className="text-sm font-semibold uppercase tracking-wide" style={{ color: INK }}>
+            Capability maturity backed by outcomes
+          </div>
+          <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">
+            The page closes on maturity so the board can read the modeled roadmap
+            first, then see the final capability movement.
+          </p>
+        </div>
+        <div className="font-mono text-xl font-semibold tabular-nums" style={{ color: INK }}>
+          Current {summary.maturity.current.toFixed(1)} -&gt; projected{' '}
+          {summary.maturity.projected.toFixed(1)}
+        </div>
+      </div>
+
+      <div className="mt-4 grid grid-cols-5 gap-2 text-center text-[11px] text-slate-500">
+        {['Ad hoc', 'Visible', 'Managed', 'Integrated', 'Optimized'].map((label, index) => (
+          <div key={label}>
+            <div className="mx-auto mb-1 grid h-6 w-6 place-items-center rounded-full bg-[#071B4D] text-xs font-semibold text-white">
+              {index + 1}
+            </div>
+            {label}
+          </div>
+        ))}
+      </div>
+
+      <div className="mt-4 overflow-x-auto">
+        <table className="w-full min-w-[720px] border-collapse text-sm">
+          <thead>
+            <tr className="bg-[#071B4D] text-left text-xs uppercase tracking-wide text-white">
+              <th className="px-3 py-2 font-medium">Capability</th>
+              <th className="px-3 py-2 font-medium">Business outcome</th>
+              <th className="px-3 py-2 font-medium">Current → projected</th>
+              <th className="px-3 py-2 font-medium">Return signal</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((row) => (
+              <tr key={row.name} className="border-b border-stone-100 last:border-0">
+                <td className="px-3 py-3 font-semibold" style={{ color: INK }}>
+                  {row.name}
+                </td>
+                <td className="px-3 py-3 text-slate-600">{row.outcome}</td>
+                <td className="px-3 py-3">
+                  <div
+                    className="relative h-6 min-w-40"
+                    aria-label={`Current maturity ${row.currentMaturity.toFixed(1)} projected ${row.projectedMaturity.toFixed(1)}`}
+                  >
+                    <div className="absolute left-0 right-0 top-3 h-0.5 bg-slate-200" />
+                    <div
+                      className="absolute top-1.5 h-4 w-4 -translate-x-1/2 rounded-full border-2 border-white bg-[#2468C9] shadow"
+                      style={{ left: maturityPosition(row.currentMaturity) }}
+                    />
+                    <div
+                      className="absolute top-1.5 h-4 w-4 -translate-x-1/2 rounded-full border-2 border-white shadow transition-all"
+                      style={{
+                        left: maturityPosition(row.projectedMaturity),
+                        backgroundColor: GOOD,
+                      }}
+                    />
+                  </div>
+                </td>
+                <td className="px-3 py-3">
+                  <div className="flex items-center gap-2">
+                    <div className="h-2.5 flex-1 overflow-hidden rounded-full bg-slate-100">
+                      <div
+                        className="h-full rounded-full transition-all"
+                        style={{
+                          width: `${row.returnSignalPct}%`,
+                          backgroundColor: GOOD,
+                        }}
+                      />
+                    </div>
+                    <span className="w-10 text-right font-mono text-xs tabular-nums text-slate-500">
+                      {row.returnSignalPct}%
+                    </span>
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </section>
   );
 }
