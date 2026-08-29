@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { PasswordGate } from './components/PasswordGate';
 import { TabNav, type AppPage } from './components/TabNav';
 import { AiRiskView } from './components/views/AiRiskView';
 import { BudgetWhatIf } from './components/views/BudgetWhatIf';
@@ -7,11 +8,20 @@ import { EnterpriseRiskView } from './components/views/EnterpriseRiskView';
 import { WorkstreamDetail } from './components/views/WorkstreamDetail';
 import { WorkstreamWhatIf } from './components/views/WorkstreamWhatIf';
 import { CapabilityRoiBoard } from './components/views/CapabilityRoiBoard';
+import { AUTH_STORAGE_KEY } from './data/auth';
 import { WORKSTREAMS } from './data/workstreams';
 import { INK, PAPER } from './lib/format';
 import { appVersionFromPath } from './lib/versioning';
 
 export default function App() {
+  const [unlocked, setUnlocked] = useState(
+    () => sessionStorage.getItem(AUTH_STORAGE_KEY) === 'unlocked'
+  );
+
+  if (!unlocked) {
+    return <PasswordGate onUnlock={() => setUnlocked(true)} />;
+  }
+
   const version = appVersionFromPath(window.location.pathname);
 
   if (version === 'v0') {
