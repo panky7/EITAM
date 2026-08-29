@@ -15,6 +15,7 @@ import {
 import { InteractiveRoadmapTimeline } from '../InteractiveRoadmapTimeline';
 import { TOTAL_FULL_COST } from '../../data/derived';
 import {
+  capabilityMaturitySummary,
   capabilityRows,
   modelScopePreset,
   type ModelScopePresetId,
@@ -108,8 +109,12 @@ export function CapabilityRoiBoard() {
     [budgetSEK, selectedWorkstreamIds],
   );
   const rows = useMemo(
-    () => capabilityRows(budgetSEK, summary.scopeCostSEK),
-    [budgetSEK, summary.scopeCostSEK],
+    () => capabilityRows(budgetSEK, summary.scopeCostSEK, selectedWorkstreamIds),
+    [budgetSEK, summary.scopeCostSEK, selectedWorkstreamIds],
+  );
+  const maturity = useMemo(
+    () => capabilityMaturitySummary(rows),
+    [rows],
   );
 
   const toggleWorkstream = (workstreamId: WorkstreamId) => {
@@ -381,7 +386,7 @@ export function CapabilityRoiBoard() {
         scopeBenefitSEK={summary.scopeBenefitSEK}
       />
 
-      <MaturityDeck rows={rows} summary={summary} />
+      <MaturityDeck rows={rows} maturity={maturity} />
     </div>
   );
 }
@@ -414,10 +419,10 @@ function MetricCard({
 
 function MaturityDeck({
   rows,
-  summary,
+  maturity,
 }: {
   rows: ReturnType<typeof capabilityRows>;
-  summary: ReturnType<typeof scopedCapabilityRoiSummary>;
+  maturity: ReturnType<typeof capabilityMaturitySummary>;
 }) {
   return (
     <section className="rounded-lg border border-stone-200 bg-white p-4 shadow-sm shadow-stone-200/70">
@@ -432,8 +437,8 @@ function MaturityDeck({
           </p>
         </div>
         <div className="font-mono text-xl font-semibold tabular-nums" style={{ color: INK }}>
-          Current {summary.maturity.current.toFixed(1)} -&gt; projected{' '}
-          {summary.maturity.projected.toFixed(1)}
+          Current {maturity.current.toFixed(1)} -&gt; projected{' '}
+          {maturity.projected.toFixed(1)}
         </div>
       </div>
 

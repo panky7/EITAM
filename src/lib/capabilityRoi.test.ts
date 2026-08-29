@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { TOTAL_FULL_COST } from '../data/derived';
 import {
+  capabilityMaturitySummary,
   capabilityRows,
   capabilityRoiSummary,
   modelScopePreset,
@@ -102,5 +103,46 @@ describe('capabilityRows', () => {
       returnSignalPct: 98,
     });
     expect(rows.some((row) => row.name === 'Business ownership and data quality')).toBe(true);
+  });
+
+  it('only projects maturity for capabilities covered by the selected modeling scope', () => {
+    const rows = capabilityRows(
+      17_250_000,
+      17_250_000,
+      new Set(['hardware', 'ai']),
+    );
+
+    expect(rows.find((row) => row.name === 'Physical IT asset management')).toMatchObject({
+      projectedMaturity: 3,
+      returnSignalPct: 98,
+    });
+    expect(rows.find((row) => row.name === 'AI asset management')).toMatchObject({
+      projectedMaturity: 3,
+      returnSignalPct: 82,
+    });
+    expect(rows.find((row) => row.name === 'Cloud and on-prem asset management')).toMatchObject({
+      projectedMaturity: 1,
+      returnSignalPct: 0,
+    });
+    expect(rows.find((row) => row.name === 'Software and license governance')).toMatchObject({
+      projectedMaturity: 1,
+      returnSignalPct: 0,
+    });
+  });
+});
+
+describe('capabilityMaturitySummary', () => {
+  it('summarizes projected maturity from the modeled capability rows', () => {
+    const rows = capabilityRows(
+      17_250_000,
+      17_250_000,
+      new Set(['hardware', 'ai']),
+    );
+
+    expect(capabilityMaturitySummary(rows)).toEqual({
+      current: 1,
+      projected: 2.25,
+      target: 3,
+    });
   });
 });

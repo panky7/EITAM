@@ -60,43 +60,56 @@ const CAPABILITY_INPUTS = [
     name: 'Physical IT asset management',
     outcome: 'Trusted endpoint and network inventory',
     weight: 0.98,
+    workstreamIds: ['hardware'],
   },
   {
     name: 'Asset discovery and reconciliation',
     outcome: 'Fewer unknown assets and stronger CMDB quality',
     weight: 0.94,
+    workstreamIds: ['hardware', 'ai', 'cloud', 'ot', 'software'],
   },
   {
     name: 'Security posture integration',
     outcome: 'Qualys-driven vulnerability and asset-risk context',
     weight: 0.88,
+    workstreamIds: ['hardware', 'ai', 'cloud', 'ot'],
   },
   {
     name: 'AI asset management',
     outcome: 'EU AI Act readiness and controlled AI inventory',
     weight: 0.82,
+    workstreamIds: ['ai'],
   },
   {
     name: 'Cloud and on-prem asset management',
     outcome: 'Risk, ownership and lifecycle visibility',
     weight: 0.76,
+    workstreamIds: ['cloud'],
   },
   {
     name: 'Software and license governance',
     outcome: 'Optimization of licenses and unused-device value',
     weight: 0.72,
+    workstreamIds: ['software'],
   },
   {
     name: 'OT / industrial asset visibility',
     outcome: 'Baseline risk classification and resilience',
     weight: 0.58,
+    workstreamIds: ['ot'],
   },
   {
     name: 'Business ownership and data quality',
     outcome: 'Validated stewardship with business appreciation',
     weight: 0.9,
+    workstreamIds: ['hardware', 'ai', 'cloud', 'ot', 'software', 'newemerging'],
   },
-];
+] satisfies Array<{
+  name: string;
+  outcome: string;
+  weight: number;
+  workstreamIds: WorkstreamId[];
+}>;
 
 const MODEL_SCOPE_PRESETS: Record<ModelScopePresetId, Omit<ModelScopePreset, 'id'>> = {
   minimum_viable: {
@@ -195,18 +208,49 @@ export function modelScopePreset(id: ModelScopePresetId): ModelScopePreset {
 export function capabilityRows(
   budgetSEK: number,
   fullCostSEK = TOTAL_FULL_COST,
+  selectedWorkstreamIds: Set<WorkstreamId> = new Set(
+    WORKSTREAMS.map((workstream) => workstream.id),
+  ),
 ): CapabilityRow[] {
   const coverage = fundingCoverage(budgetSEK, fullCostSEK);
 
   return CAPABILITY_INPUTS.map((capability) => {
-    const capabilityCoverage = clamp(coverage * capability.weight, 0, 1);
+    const isInSelectedScope = capability.workstreamIds.some((workstreamId) =>
+      selectedWorkstreamIds.has(workstreamId),
+    );
+    const capabilityCoverage = isInSelectedScope
+      ? clamp(coverage * capability.weight, 0, 1)
+      : 0;
 
     return {
       name: capability.name,
       outcome: capability.outcome,
       currentMaturity: CURRENT_MATURITY,
-      projectedMaturity: maturityFromCoverage(coverage),
+      projectedMaturity: isInSelectedScope
+        ? maturityFromCoverage(coverage)
+        : CURRENT_MATURITY,
       returnSignalPct: Math.round(capabilityCoverage * 100),
     };
   });
+}
+
+export function capabilityMaturitySummary(rows: CapabilityRow[]): CapabilityMaturity {
+  if (rows.length === 0) {
+    return {
+      current: CURRENT_MATURITY,
+      projected: CURRENT_MATURITY,
+      target: TARGET_MATURITY,
+    };
+  }
+
+  const current =
+    rows.reduce((sum, row) => sum + row.currentMaturity, 0) / rows.length;
+  const projected =
+    rows.reduce((sum, row) => sum + row.projectedMaturity, 0) / rows.length;
+
+  return {
+    current: Number(current.toFixed(2)),
+    projected: Number(projected.toFixed(2)),
+    target: TARGET_MATURITY,
+  };
 }
