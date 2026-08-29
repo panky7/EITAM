@@ -280,3 +280,10 @@ export function scopeWikiRows(): ScopeWikiRow[] {
     highlights: workstream.valueHighlights.map((highlight) => highlight.label),
   }));
 }
+
+export function scopeWikiRowById(
+  rows: ScopeWikiRow[],
+  id: WorkstreamId | null,
+): ScopeWikiRow | undefined {
+  return id ? rows.find((row) => row.id === id) : undefined;
+}

@@ -7,6 +7,7 @@ import {
   modelScopePreset,
   scopeWikiRows,
   scopedCapabilityRoiSummary,
+  scopeWikiRowById,
 } from './capabilityRoi';
 
 describe('capabilityRoiSummary', () => {
@@ -169,5 +170,12 @@ describe('scopeWikiRows', () => {
     expect(rows[0].outOfScope).toBe(
       'Predictive lifecycle management and broader asset intelligence analytics.',
     );
+  });
+
+  it('finds one scope wiki row by clicked scope id', () => {
+    const rows = scopeWikiRows();
+
+    expect(scopeWikiRowById(rows, 'hardware')?.name).toBe('Hardware');
+    expect(scopeWikiRowById(rows, 'ai')?.name).toBe('AI Assets');
   });
 });

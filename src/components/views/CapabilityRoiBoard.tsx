@@ -16,8 +16,10 @@ import {
   capabilityMaturitySummary,
   capabilityRows,
   modelScopePreset,
+  scopeWikiRowById,
   scopeWikiRows,
   type ModelScopePresetId,
+  type ScopeWikiRow,
   scopedCapabilityRoiSummary,
 } from '../../lib/capabilityRoi';
 import { WORKSTREAMS, type WorkstreamId } from '../../data/workstreams';
@@ -328,93 +330,106 @@ function ScopeWiki({
 }: {
   rows: ReturnType<typeof scopeWikiRows>;
 }) {
+  const [activeScopeId, setActiveScopeId] = useState<WorkstreamId | null>(null);
+  const activeRow = scopeWikiRowById(rows, activeScopeId);
+
   return (
-    <details className="group rounded-lg border border-stone-200 bg-white p-4 shadow-sm shadow-stone-200/70">
-      <summary className="flex cursor-pointer list-none items-center justify-between gap-3">
-        <div className="flex min-w-0 flex-wrap gap-2">
-          {rows.map((row) => (
-            <span
+    <section className="rounded-lg border border-stone-200 bg-white p-4 shadow-sm shadow-stone-200/70">
+      <div className="flex min-w-0 flex-wrap gap-2">
+        {rows.map((row) => {
+          const active = row.id === activeScopeId;
+
+          return (
+            <button
               key={row.id}
-              className="rounded-md border border-stone-200 bg-stone-50 px-3 py-2 text-xs font-semibold"
-              style={{ color: INK }}
+              type="button"
+              className={`inline-flex items-center gap-2 rounded-md border px-3 py-2 text-xs font-semibold transition ${
+                active
+                  ? 'border-[#071B4D] bg-[#071B4D] text-white'
+                  : 'border-stone-200 bg-stone-50 hover:border-slate-300'
+              }`}
+              style={active ? undefined : { color: INK }}
+              aria-expanded={active}
+              onClick={() =>
+                setActiveScopeId((current) => (current === row.id ? null : row.id))
+              }
             >
               {row.name}
-            </span>
-          ))}
+              <ChevronDown
+                className={`transition ${active ? 'rotate-180' : ''}`}
+                size={14}
+                aria-hidden="true"
+              />
+            </button>
+          );
+        })}
+      </div>
+
+      {activeRow ? <ScopeWikiDetail row={activeRow} /> : null}
+    </section>
+  );
+}
+
+function ScopeWikiDetail({ row }: { row: ScopeWikiRow }) {
+  return (
+    <article className="mt-4 rounded-lg border border-stone-200 bg-[#FAFAF8] p-4">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+            {row.short}
+          </div>
+          <h3 className="mt-1 text-base font-semibold" style={{ color: INK }}>
+            {row.name}
+          </h3>
         </div>
-        <ChevronDown
-          className="shrink-0 text-slate-500 transition group-open:rotate-180"
-          size={18}
-          aria-hidden="true"
-        />
-      </summary>
+        <div className="grid grid-cols-2 gap-2 text-right text-[11px] text-slate-500">
+          <div>
+            Cost
+            <strong className="block font-mono text-xs text-slate-950">
+              {fmtM(row.costSEK)}
+            </strong>
+          </div>
+          <div>
+            Value
+            <strong className="block font-mono text-xs text-slate-950">
+              {fmtM(row.benefitSEK)}
+            </strong>
+          </div>
+        </div>
+      </div>
 
-      <div className="mt-4 grid gap-3 lg:grid-cols-2">
-        {rows.map((row) => (
-          <article
-            key={row.id}
-            className="rounded-lg border border-stone-200 bg-[#FAFAF8] p-4"
+      <p className="mt-3 text-sm leading-6 text-slate-600">{row.summary}</p>
+
+      <div className="mt-3 flex flex-wrap gap-2">
+        {row.highlights.map((highlight) => (
+          <span
+            key={highlight}
+            className="rounded-full bg-green-50 px-2.5 py-1 text-[11px] font-medium text-green-800"
           >
-            <div className="flex flex-wrap items-start justify-between gap-3">
-              <div>
-                <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
-                  {row.short}
-                </div>
-                <h3 className="mt-1 text-base font-semibold" style={{ color: INK }}>
-                  {row.name}
-                </h3>
-              </div>
-              <div className="grid grid-cols-2 gap-2 text-right text-[11px] text-slate-500">
-                <div>
-                  Cost
-                  <strong className="block font-mono text-xs text-slate-950">
-                    {fmtM(row.costSEK)}
-                  </strong>
-                </div>
-                <div>
-                  Value
-                  <strong className="block font-mono text-xs text-slate-950">
-                    {fmtM(row.benefitSEK)}
-                  </strong>
-                </div>
-              </div>
-            </div>
-
-            <p className="mt-3 text-sm leading-6 text-slate-600">{row.summary}</p>
-
-            <div className="mt-3 flex flex-wrap gap-2">
-              {row.highlights.map((highlight) => (
-                <span
-                  key={highlight}
-                  className="rounded-full bg-green-50 px-2.5 py-1 text-[11px] font-medium text-green-800"
-                >
-                  {highlight}
-                </span>
-              ))}
-            </div>
-
-            <div className="mt-4 grid gap-3 md:grid-cols-2">
-              <div>
-                <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
-                  In scope
-                </div>
-                <ul className="mt-2 space-y-1.5 text-xs leading-5 text-slate-600">
-                  {row.inScope.map((item) => (
-                    <li key={item}>{item}</li>
-                  ))}
-                </ul>
-              </div>
-              <div>
-                <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
-                  Beyond year one
-                </div>
-                <p className="mt-2 text-xs leading-5 text-slate-600">{row.outOfScope}</p>
-              </div>
-            </div>
-          </article>
+            {highlight}
+          </span>
         ))}
       </div>
-    </details>
+
+      <div className="mt-4 grid gap-3 md:grid-cols-2">
+        <div>
+          <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+            In scope
+          </div>
+          <ul className="mt-2 space-y-1.5 text-xs leading-5 text-slate-600">
+            {row.inScope.map((item) => (
+              <li key={item}>{item}</li>
+            ))}
+          </ul>
+        </div>
+        <div>
+          <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+            Beyond year one
+          </div>
+          <p className="mt-2 text-xs leading-5 text-slate-600">{row.outOfScope}</p>
+        </div>
+      </div>
+    </article>
   );
 }
 
