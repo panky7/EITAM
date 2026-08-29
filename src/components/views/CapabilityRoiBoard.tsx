@@ -2,9 +2,11 @@ import { useMemo, useState } from 'react';
 import {
   BadgeCheck,
   BarChart3,
+  Building2,
   ChevronDown,
   Coins,
   Database,
+  Handshake,
   Laptop,
   Layers3,
   Network,
@@ -13,12 +15,26 @@ import {
   ShieldCheck,
   Wrench,
 } from 'lucide-react';
+import {
+  Cell,
+  Pie,
+  PieChart,
+  ResponsiveContainer,
+  Tooltip,
+} from 'recharts';
 import { InteractiveRoadmapTimeline } from '../InteractiveRoadmapTimeline';
 import { TOTAL_FULL_COST } from '../../data/derived';
 import {
   ROADMAP_KNOWLEDGE_CARDS,
   type KnowledgeCard,
 } from '../../data/knowledgeDeck';
+import {
+  PARTNER_MODEL,
+  partnerInvestmentChartData,
+  partnerValueChartData,
+  type PartnerContribution,
+  type PartnerContributionCategory,
+} from '../../data/partners';
 import {
   capabilityMaturitySummary,
   capabilityRows,
@@ -80,6 +96,21 @@ const knowledgeIcons: Record<KnowledgeCard['id'], typeof Layers3> = {
   'category-outcomes': Layers3,
   'data-thon': Database,
   'value-framework': BarChart3,
+};
+
+const partnerIcons: Record<PartnerContribution['id'], typeof Building2> = {
+  ey: ShieldCheck,
+  tcs: Database,
+  accenture: Wrench,
+  hm: Handshake,
+};
+
+const contributionCategoryLabels: Record<PartnerContributionCategory, string> = {
+  financial: 'Financial return',
+  security: 'Security posture',
+  compliance: 'Compliance readiness',
+  incident: 'Incident response',
+  adoption: 'Business adoption',
 };
 
 function maturityPosition(maturity: number): string {
@@ -324,6 +355,8 @@ export function CapabilityRoiBoard() {
         </div>
       </section>
 
+      <PartnerContributionModel partners={PARTNER_MODEL} />
+
       <ScopeWiki rows={wikiRows} />
 
       <InteractiveRoadmapTimeline
@@ -337,6 +370,217 @@ export function CapabilityRoiBoard() {
 
       <KnowledgeDeck cards={ROADMAP_KNOWLEDGE_CARDS} />
     </div>
+  );
+}
+
+function PartnerContributionModel({
+  partners,
+}: {
+  partners: PartnerContribution[];
+}) {
+  const [activePartnerId, setActivePartnerId] =
+    useState<PartnerContribution['id'] | null>(null);
+  const activePartner = partners.find((partner) => partner.id === activePartnerId);
+  const investmentData = partnerInvestmentChartData();
+  const valueData = partnerValueChartData();
+
+  return (
+    <section className="overflow-hidden rounded-lg border border-stone-200 bg-white shadow-sm shadow-stone-200/70">
+      <div className="grid bg-[#071B4D] text-white lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
+        <div className="p-4">
+          <div className="text-sm font-semibold uppercase tracking-wide">
+            Partner contribution model
+          </div>
+          <p className="mt-2 text-sm leading-6 text-white/75">
+            Investment asked and capability-enabled value across the delivery
+            ecosystem.
+          </p>
+        </div>
+        <div className="grid border-t border-white/15 text-sm lg:grid-cols-2 lg:border-l lg:border-t-0">
+          <PartnerPie title="Investment asked" data={investmentData} />
+          <PartnerPie title="Value enabled" data={valueData} />
+        </div>
+      </div>
+
+      <div className="grid gap-2 p-4 md:grid-cols-2 xl:grid-cols-4">
+        {partners.map((partner) => {
+          const Icon = partnerIcons[partner.id];
+          const active = partner.id === activePartnerId;
+
+          return (
+            <button
+              key={partner.id}
+              type="button"
+              className={`flex min-h-24 items-start justify-between gap-3 rounded-lg border p-3 text-left transition ${
+                active
+                  ? 'border-[#071B4D] bg-[#071B4D] text-white shadow-md'
+                  : 'border-stone-200 bg-[#FAFAF8] text-slate-700 hover:border-slate-300'
+              }`}
+              aria-expanded={active}
+              onClick={() =>
+                setActivePartnerId((current) =>
+                  current === partner.id ? null : partner.id,
+                )
+              }
+            >
+              <span className="flex min-w-0 gap-3">
+                <span
+                  className={`grid h-9 w-9 shrink-0 place-items-center rounded-md ${
+                    active ? 'bg-white/10 text-green-200' : 'bg-green-50 text-green-700'
+                  }`}
+                >
+                  <Icon size={18} />
+                </span>
+                <span className="min-w-0">
+                  <span className="block text-sm font-semibold">{partner.name}</span>
+                  <span className={`mt-1 block text-xs leading-5 ${active ? 'text-white/75' : 'text-slate-500'}`}>
+                    {partner.role}
+                  </span>
+                  <span className="mt-2 grid grid-cols-2 gap-2 font-mono text-[11px]">
+                    <span>{fmtM(partner.investmentSEK)}</span>
+                    <span>{fmtM(partner.valueSEK)}</span>
+                  </span>
+                </span>
+              </span>
+              <ChevronDown
+                className={`shrink-0 transition ${active ? 'rotate-180' : ''}`}
+                size={16}
+                aria-hidden="true"
+              />
+            </button>
+          );
+        })}
+      </div>
+
+      {activePartner ? <PartnerDetail partner={activePartner} /> : null}
+    </section>
+  );
+}
+
+function PartnerPie({
+  title,
+  data,
+}: {
+  title: string;
+  data: ReturnType<typeof partnerInvestmentChartData>;
+}) {
+  return (
+    <div className="border-white/10 p-4 first:border-b lg:first:border-b-0 lg:first:border-r">
+      <div className="text-[11px] font-semibold uppercase tracking-wide text-white/65">
+        {title}
+      </div>
+      <div className="mt-2 grid grid-cols-[120px_minmax(0,1fr)] items-center gap-3">
+        <div className="h-28">
+          <ResponsiveContainer width="100%" height="100%">
+            <PieChart>
+              <Tooltip
+                formatter={(value: number) => fmtM(value)}
+                contentStyle={{
+                  borderRadius: 8,
+                  border: '1px solid rgba(255,255,255,0.2)',
+                  background: '#071B4D',
+                  color: 'white',
+                }}
+              />
+              <Pie
+                data={data}
+                dataKey="value"
+                nameKey="name"
+                innerRadius={30}
+                outerRadius={52}
+                paddingAngle={2}
+                stroke="rgba(255,255,255,0.8)"
+                strokeWidth={1}
+              >
+                {data.map((item) => (
+                  <Cell key={item.id} fill={item.color} />
+                ))}
+              </Pie>
+            </PieChart>
+          </ResponsiveContainer>
+        </div>
+        <div className="space-y-1.5">
+          {data.map((item) => (
+            <div key={item.id} className="flex items-center justify-between gap-2 text-xs">
+              <span className="flex min-w-0 items-center gap-2 text-white/80">
+                <span
+                  className="h-2.5 w-2.5 shrink-0 rounded-full"
+                  style={{ backgroundColor: item.color }}
+                />
+                <span className="truncate">{item.name}</span>
+              </span>
+              <strong className="font-mono text-white">{fmtM(item.value)}</strong>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function PartnerDetail({ partner }: { partner: PartnerContribution }) {
+  return (
+    <article className="border-t border-stone-200 bg-[#FAFAF8] p-4">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+            Contribution scope
+          </div>
+          <h3 className="mt-1 text-lg font-semibold" style={{ color: INK }}>
+            {partner.name}
+          </h3>
+          <p className="mt-1 text-sm text-slate-600">{partner.role}</p>
+        </div>
+        <div className="grid grid-cols-2 gap-2 text-right text-[11px] text-slate-500">
+          <div className="rounded-md bg-white px-3 py-2">
+            Investment
+            <strong className="block font-mono text-xs text-slate-950">
+              {fmtM(partner.investmentSEK)}
+            </strong>
+          </div>
+          <div className="rounded-md bg-white px-3 py-2">
+            Enabled value
+            <strong className="block font-mono text-xs text-slate-950">
+              {fmtM(partner.valueSEK)}
+            </strong>
+          </div>
+        </div>
+      </div>
+
+      <div className="mt-3 flex flex-wrap gap-2">
+        {partner.categories.map((category) => (
+          <span
+            key={category}
+            className="rounded-full bg-green-50 px-2.5 py-1 text-[11px] font-medium text-green-800"
+          >
+            {contributionCategoryLabels[category]}
+          </span>
+        ))}
+      </div>
+
+      <div className="mt-4 grid gap-3 lg:grid-cols-2">
+        <div className="rounded-lg border border-stone-200 bg-white p-3">
+          <div className="text-sm font-semibold" style={{ color: INK }}>
+            Scope contribution
+          </div>
+          <ul className="mt-2 space-y-1.5 text-xs leading-5 text-slate-600">
+            {partner.scope.map((item) => (
+              <li key={item}>{item}</li>
+            ))}
+          </ul>
+        </div>
+        <div className="rounded-lg border border-stone-200 bg-white p-3">
+          <div className="text-sm font-semibold" style={{ color: INK }}>
+            Success signals
+          </div>
+          <ul className="mt-2 space-y-1.5 text-xs leading-5 text-slate-600">
+            {partner.successSignals.map((signal) => (
+              <li key={signal}>{signal}</li>
+            ))}
+          </ul>
+        </div>
+      </div>
+    </article>
   );
 }
 
