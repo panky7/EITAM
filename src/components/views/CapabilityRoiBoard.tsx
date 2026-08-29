@@ -2,7 +2,6 @@ import { useMemo, useState } from 'react';
 import {
   BadgeCheck,
   BarChart3,
-  Building2,
   ChevronDown,
   Coins,
   Database,
@@ -15,13 +14,6 @@ import {
   ShieldCheck,
   Wrench,
 } from 'lucide-react';
-import {
-  Cell,
-  Pie,
-  PieChart,
-  ResponsiveContainer,
-  Tooltip,
-} from 'recharts';
 import { InteractiveRoadmapTimeline } from '../InteractiveRoadmapTimeline';
 import { TOTAL_FULL_COST } from '../../data/derived';
 import {
@@ -30,8 +22,6 @@ import {
 } from '../../data/knowledgeDeck';
 import {
   PARTNER_MODEL,
-  partnerInvestmentChartData,
-  partnerValueChartData,
   type PartnerContribution,
   type PartnerContributionCategory,
 } from '../../data/partners';
@@ -98,7 +88,7 @@ const knowledgeIcons: Record<KnowledgeCard['id'], typeof Layers3> = {
   'value-framework': BarChart3,
 };
 
-const partnerIcons: Record<PartnerContribution['id'], typeof Building2> = {
+const partnerIcons: Record<PartnerContribution['id'], typeof ShieldCheck> = {
   ey: ShieldCheck,
   tcs: Database,
   accenture: Wrench,
@@ -381,25 +371,17 @@ function PartnerContributionModel({
   const [activePartnerId, setActivePartnerId] =
     useState<PartnerContribution['id'] | null>(null);
   const activePartner = partners.find((partner) => partner.id === activePartnerId);
-  const investmentData = partnerInvestmentChartData();
-  const valueData = partnerValueChartData();
 
   return (
     <section className="overflow-hidden rounded-lg border border-stone-200 bg-white shadow-sm shadow-stone-200/70">
-      <div className="grid bg-[#071B4D] text-white lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
-        <div className="p-4">
-          <div className="text-sm font-semibold uppercase tracking-wide">
-            Partner contribution model
-          </div>
-          <p className="mt-2 text-sm leading-6 text-white/75">
-            Investment asked and capability-enabled value across the delivery
-            ecosystem.
-          </p>
+      <div className="bg-[#071B4D] p-4 text-white">
+        <div className="text-sm font-semibold uppercase tracking-wide">
+          Partners and H&M engagement model
         </div>
-        <div className="grid border-t border-white/15 text-sm lg:grid-cols-2 lg:border-l lg:border-t-0">
-          <PartnerPie title="Investment asked" data={investmentData} />
-          <PartnerPie title="Value enabled" data={valueData} />
-        </div>
+        <p className="mt-2 max-w-4xl text-sm leading-6 text-white/75">
+          Capability-enabled contribution across strategic assurance, data foundation,
+          platform enablement and cyber/business adoption.
+        </p>
       </div>
 
       <div className="grid gap-2 p-4 md:grid-cols-2 xl:grid-cols-4">
@@ -454,67 +436,6 @@ function PartnerContributionModel({
 
       {activePartner ? <PartnerDetail partner={activePartner} /> : null}
     </section>
-  );
-}
-
-function PartnerPie({
-  title,
-  data,
-}: {
-  title: string;
-  data: ReturnType<typeof partnerInvestmentChartData>;
-}) {
-  return (
-    <div className="border-white/10 p-4 first:border-b lg:first:border-b-0 lg:first:border-r">
-      <div className="text-[11px] font-semibold uppercase tracking-wide text-white/65">
-        {title}
-      </div>
-      <div className="mt-2 grid grid-cols-[120px_minmax(0,1fr)] items-center gap-3">
-        <div className="h-28">
-          <ResponsiveContainer width="100%" height="100%">
-            <PieChart>
-              <Tooltip
-                formatter={(value: number) => fmtM(value)}
-                contentStyle={{
-                  borderRadius: 8,
-                  border: '1px solid rgba(255,255,255,0.2)',
-                  background: '#071B4D',
-                  color: 'white',
-                }}
-              />
-              <Pie
-                data={data}
-                dataKey="value"
-                nameKey="name"
-                innerRadius={30}
-                outerRadius={52}
-                paddingAngle={2}
-                stroke="rgba(255,255,255,0.8)"
-                strokeWidth={1}
-              >
-                {data.map((item) => (
-                  <Cell key={item.id} fill={item.color} />
-                ))}
-              </Pie>
-            </PieChart>
-          </ResponsiveContainer>
-        </div>
-        <div className="space-y-1.5">
-          {data.map((item) => (
-            <div key={item.id} className="flex items-center justify-between gap-2 text-xs">
-              <span className="flex min-w-0 items-center gap-2 text-white/80">
-                <span
-                  className="h-2.5 w-2.5 shrink-0 rounded-full"
-                  style={{ backgroundColor: item.color }}
-                />
-                <span className="truncate">{item.name}</span>
-              </span>
-              <strong className="font-mono text-white">{fmtM(item.value)}</strong>
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
   );
 }
 

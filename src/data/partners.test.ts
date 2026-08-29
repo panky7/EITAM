@@ -12,7 +12,7 @@ describe('PARTNER_MODEL', () => {
       'EY',
       'TCS',
       'Accenture',
-      'H&M + Business Units',
+      'Cyber + Business scope',
     ]);
 
     expect(PARTNER_MODEL.find((partner) => partner.name === 'EY')?.investmentSEK).toBe(
@@ -25,7 +25,7 @@ describe('PARTNER_MODEL', () => {
       PARTNER_MODEL.find((partner) => partner.name === 'Accenture')?.investmentSEK,
     ).toBe(3_000_000);
     expect(
-      PARTNER_MODEL.find((partner) => partner.name === 'H&M + Business Units')
+      PARTNER_MODEL.find((partner) => partner.name === 'Cyber + Business scope')
         ?.investmentSEK,
     ).toBe(0);
 
@@ -45,7 +45,7 @@ describe('PARTNER_MODEL', () => {
     ]);
     expect(partnerValueChartData()).toHaveLength(4);
     expect(
-      partnerValueChartData().find((item) => item.name === 'H&M + Business Units')
+      partnerValueChartData().find((item) => item.name === 'Cyber + Business scope')
         ?.value,
     ).toBe(12_000_000);
   });

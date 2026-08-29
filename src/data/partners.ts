@@ -124,7 +124,7 @@ export const PARTNER_MODEL: PartnerContribution[] = [
   },
   {
     id: 'hm',
-    name: 'H&M + Business Units',
+    name: 'Cyber + Business scope',
     role: 'Internal vision, ownership and adoption engine',
     investmentSEK: 0,
     valueSEK: 12_000_000,
