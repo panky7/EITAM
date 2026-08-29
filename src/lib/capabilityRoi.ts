@@ -28,6 +28,19 @@ export interface ScopedCapabilityRoiSummary extends CapabilityRoiSummary {
   scopeBenefitSEK: number;
 }
 
+export type ModelScopePresetId =
+  | 'minimum_viable'
+  | 'security_first'
+  | 'compliance_ready'
+  | 'full_uplift';
+
+export interface ModelScopePreset {
+  id: ModelScopePresetId;
+  label: string;
+  budgetSEK: number;
+  workstreamIds: WorkstreamId[];
+}
+
 export interface CapabilityRow {
   name: string;
   outcome: string;
@@ -84,6 +97,29 @@ const CAPABILITY_INPUTS = [
     weight: 0.9,
   },
 ];
+
+const MODEL_SCOPE_PRESETS: Record<ModelScopePresetId, Omit<ModelScopePreset, 'id'>> = {
+  minimum_viable: {
+    label: 'Minimum viable',
+    budgetSEK: 17_250_000,
+    workstreamIds: ['hardware', 'ai'],
+  },
+  security_first: {
+    label: 'Security first',
+    budgetSEK: 31_050_000,
+    workstreamIds: ['hardware', 'ai', 'cloud', 'ot'],
+  },
+  compliance_ready: {
+    label: 'Compliance ready',
+    budgetSEK: 22_425_000,
+    workstreamIds: ['ai', 'cloud', 'software'],
+  },
+  full_uplift: {
+    label: 'Full uplift',
+    budgetSEK: TOTAL_FULL_COST,
+    workstreamIds: WORKSTREAMS.map((workstream) => workstream.id),
+  },
+};
 
 function clamp(n: number, min: number, max: number): number {
   return Math.max(min, Math.min(max, n));
@@ -146,6 +182,13 @@ export function scopedCapabilityRoiSummary(
     ...summary,
     scopeCostSEK,
     scopeBenefitSEK,
+  };
+}
+
+export function modelScopePreset(id: ModelScopePresetId): ModelScopePreset {
+  return {
+    id,
+    ...MODEL_SCOPE_PRESETS[id],
   };
 }
 

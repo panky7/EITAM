@@ -3,6 +3,7 @@ import { TOTAL_FULL_COST } from '../data/derived';
 import {
   capabilityRows,
   capabilityRoiSummary,
+  modelScopePreset,
   scopedCapabilityRoiSummary,
 } from './capabilityRoi';
 
@@ -62,6 +63,29 @@ describe('scopedCapabilityRoiSummary', () => {
     expect(summary.multiple).toBe(0);
     expect(summary.fundedScopePct).toBe(0);
     expect(summary.maturity.projected).toBe(1);
+  });
+});
+
+describe('modelScopePreset', () => {
+  it('sets both budget and workstream scope for minimum viable modeling', () => {
+    const preset = modelScopePreset('minimum_viable');
+
+    expect(preset.budgetSEK).toBe(17_250_000);
+    expect(preset.workstreamIds).toEqual(['hardware', 'ai']);
+  });
+
+  it('sets full uplift to all workstreams and full plan cost', () => {
+    const preset = modelScopePreset('full_uplift');
+
+    expect(preset.budgetSEK).toBe(41_400_000);
+    expect(preset.workstreamIds).toEqual([
+      'hardware',
+      'ai',
+      'cloud',
+      'ot',
+      'software',
+      'newemerging',
+    ]);
   });
 });
 

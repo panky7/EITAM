@@ -16,6 +16,8 @@ import { InteractiveRoadmapTimeline } from '../InteractiveRoadmapTimeline';
 import { TOTAL_FULL_COST } from '../../data/derived';
 import {
   capabilityRows,
+  modelScopePreset,
+  type ModelScopePresetId,
   scopedCapabilityRoiSummary,
 } from '../../lib/capabilityRoi';
 import { WORKSTREAMS, type WorkstreamId } from '../../data/workstreams';
@@ -31,10 +33,38 @@ import {
 } from '../../lib/format';
 
 const presets = [
-  { label: 'Minimum viable', budgetSEK: 16_000_000, icon: Wrench },
-  { label: 'Security first', budgetSEK: 27_600_000, icon: Shield },
-  { label: 'Compliance ready', budgetSEK: 34_000_000, icon: BadgeCheck },
-  { label: 'Full uplift', budgetSEK: TOTAL_FULL_COST, icon: Rocket },
+  { id: 'minimum_viable', icon: Wrench },
+  { id: 'security_first', icon: Shield },
+  { id: 'compliance_ready', icon: BadgeCheck },
+  { id: 'full_uplift', icon: Rocket },
+] satisfies Array<{ id: ModelScopePresetId; icon: typeof Wrench }>;
+
+const presetModels = presets.map((preset) => ({
+  ...modelScopePreset(preset.id),
+  icon: preset.icon,
+}));
+
+const topMetrics = [
+  {
+    label: 'Financial return',
+    key: 'financial',
+    color: GOOD,
+  },
+  {
+    label: 'Security',
+    key: 'security',
+    color: HM_RED,
+  },
+  {
+    label: 'Compliance',
+    key: 'compliance',
+    color: '#5B3AA4',
+  },
+  {
+    label: 'Incident response',
+    key: 'incident',
+    color: WARN,
+  },
 ];
 
 const achievements = [
@@ -96,6 +126,12 @@ export function CapabilityRoiBoard() {
 
   const selectAllWorkstreams = () => {
     setSelectedWorkstreamIds(new Set(WORKSTREAMS.map((workstream) => workstream.id)));
+  };
+
+  const applyPreset = (presetId: ModelScopePresetId) => {
+    const preset = modelScopePreset(presetId);
+    setBudgetSEK(preset.budgetSEK);
+    setSelectedWorkstreamIds(new Set(preset.workstreamIds));
   };
 
   return (
@@ -171,9 +207,12 @@ export function CapabilityRoiBoard() {
             onChange={(event) => setBudgetSEK(Number(event.target.value))}
           />
           <div className="mt-4 flex flex-wrap gap-2">
-            {presets.map((preset) => {
+            {presetModels.map((preset) => {
               const Icon = preset.icon;
-              const active = Math.round(budgetSEK) === preset.budgetSEK;
+              const active =
+                Math.round(budgetSEK) === preset.budgetSEK &&
+                preset.workstreamIds.length === selectedWorkstreamIds.size &&
+                preset.workstreamIds.every((id) => selectedWorkstreamIds.has(id));
 
               return (
                 <button
@@ -184,7 +223,7 @@ export function CapabilityRoiBoard() {
                       ? 'border-[#071B4D] bg-[#071B4D] text-white'
                       : 'border-stone-200 bg-white text-slate-600 hover:border-slate-300'
                   }`}
-                  onClick={() => setBudgetSEK(preset.budgetSEK)}
+                  onClick={() => applyPreset(preset.id)}
                   aria-pressed={active}
                 >
                   <Icon size={14} />
@@ -244,37 +283,51 @@ export function CapabilityRoiBoard() {
           </div>
         </div>
 
-        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
-          <MetricCard
-            label="Financial return"
-            value={fmtX(summary.multiple)}
-            sub={`${fmtM(summary.valueSEK)} directional value`}
-            color={GOOD}
-          />
-          <MetricCard
-            label="Security"
-            value={`${summary.pillars.security}%`}
-            sub="Risk reduction"
-            color={HM_RED}
-          />
-          <MetricCard
-            label="Compliance"
-            value={`${summary.pillars.complianceReadiness}%`}
-            sub="Readiness"
-            color="#5B3AA4"
-          />
-          <MetricCard
-            label="Incident response"
-            value={`${summary.pillars.incidentResponse}%`}
-            sub="MTTR uplift"
-            color={WARN}
-          />
-          <MetricCard
-            label="Maturity"
-            value={summary.maturity.projected.toFixed(1)}
-            sub={`Target ${summary.maturity.target.toFixed(1)}`}
-            color="#2468C9"
-          />
+        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+          {topMetrics.map((metric) => {
+            if (metric.key === 'financial') {
+              return (
+                <MetricCard
+                  key={metric.key}
+                  label={metric.label}
+                  value={fmtX(summary.multiple)}
+                  sub={`${fmtM(summary.valueSEK)} directional value`}
+                  color={metric.color}
+                />
+              );
+            }
+            if (metric.key === 'security') {
+              return (
+                <MetricCard
+                  key={metric.key}
+                  label={metric.label}
+                  value={`${summary.pillars.security}%`}
+                  sub="Risk reduction"
+                  color={metric.color}
+                />
+              );
+            }
+            if (metric.key === 'compliance') {
+              return (
+                <MetricCard
+                  key={metric.key}
+                  label={metric.label}
+                  value={`${summary.pillars.complianceReadiness}%`}
+                  sub="Readiness"
+                  color={metric.color}
+                />
+              );
+            }
+            return (
+              <MetricCard
+                key={metric.key}
+                label={metric.label}
+                value={`${summary.pillars.incidentResponse}%`}
+                sub="MTTR uplift"
+                color={metric.color}
+              />
+            );
+          })}
         </div>
       </section>
 
@@ -397,6 +450,38 @@ export function CapabilityRoiBoard() {
         scopeCostSEK={summary.scopeCostSEK}
         scopeBenefitSEK={summary.scopeBenefitSEK}
       />
+
+      <section className="rounded-lg border border-stone-200 bg-white p-5 shadow-sm shadow-stone-200/70">
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <div>
+            <div className="text-sm font-semibold uppercase tracking-wide" style={{ color: INK }}>
+              Capability maturity end state
+            </div>
+            <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">
+              Maturity is shown last so the board closes on the business outcome:
+              selected scope moves from ad hoc visibility toward managed asset
+              management capability.
+            </p>
+          </div>
+          <div className="font-mono text-3xl font-semibold tabular-nums" style={{ color: INK }}>
+            {summary.maturity.current.toFixed(1)} -&gt; {summary.maturity.projected.toFixed(1)}
+          </div>
+        </div>
+        <div className="mt-4 grid grid-cols-5 gap-2 text-center text-xs text-slate-500">
+          {['Ad hoc', 'Visible', 'Managed', 'Integrated', 'Optimized'].map((label, index) => (
+            <div key={label} className="rounded-md bg-stone-50 px-2 py-3">
+              <div
+                className={`mx-auto mb-2 h-2 rounded-full ${
+                  index + 1 <= Math.floor(summary.maturity.projected)
+                    ? 'bg-[#587E1F]'
+                    : 'bg-stone-200'
+                }`}
+              />
+              {index + 1}. {label}
+            </div>
+          ))}
+        </div>
+      </section>
     </div>
   );
 }
