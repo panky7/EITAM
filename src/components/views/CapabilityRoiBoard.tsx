@@ -213,7 +213,7 @@ export function CapabilityRoiBoard() {
         </div>
       </section>
 
-      <section className="grid gap-4 xl:grid-cols-[minmax(280px,0.7fr)_minmax(0,1.3fr)]">
+      <section className="grid gap-3 xl:grid-cols-[minmax(280px,0.8fr)_minmax(0,1.2fr)]">
         <div className="rounded-lg border border-stone-200 bg-white p-4 shadow-sm shadow-stone-200/70">
           <div className="text-sm font-semibold uppercase tracking-wide" style={{ color: INK }}>
             Model controls
@@ -313,7 +313,7 @@ export function CapabilityRoiBoard() {
           </div>
         </div>
 
-        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <div className="grid gap-2 md:grid-cols-4 xl:grid-cols-2 2xl:grid-cols-4">
           {topMetrics.map((metric) => {
             if (metric.key === 'financial') {
               return (
@@ -754,13 +754,13 @@ function MetricCard({
   color: string;
 }) {
   return (
-    <div className="rounded-lg border border-stone-200 bg-white p-4 shadow-sm shadow-stone-200/70">
+    <div className="rounded-lg border border-stone-200 bg-white p-3 shadow-sm shadow-stone-200/70">
       <div className="border-l-4 pl-3" style={{ borderColor: color }}>
-        <div className="text-xs uppercase tracking-wide text-slate-500">{label}</div>
-        <div className="mt-1 font-mono text-xl font-semibold tabular-nums" style={{ color: INK }}>
+        <div className="text-[11px] uppercase tracking-wide text-slate-500">{label}</div>
+        <div className="mt-0.5 font-mono text-lg font-semibold tabular-nums" style={{ color: INK }}>
           {value}
         </div>
-        <div className="mt-1 text-xs leading-5" style={{ color: STEEL }}>
+        <div className="mt-0.5 text-[11px] leading-4" style={{ color: STEEL }}>
           {sub}
         </div>
       </div>

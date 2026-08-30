@@ -68,6 +68,42 @@ const MAX_SECURITY_REDUCTION_PCT = 20;
 const MAX_COMPLIANCE_READINESS_PCT = 80;
 const MAX_INCIDENT_RESPONSE_UPLIFT_PCT = 30;
 
+const WORKSTREAM_PILLAR_CONTRIBUTIONS: Record<
+  WorkstreamId,
+  Pick<CapabilityRoiPillars, 'security' | 'complianceReadiness' | 'incidentResponse'>
+> = {
+  hardware: {
+    security: 4,
+    complianceReadiness: 8,
+    incidentResponse: 12,
+  },
+  ai: {
+    security: 5,
+    complianceReadiness: 22,
+    incidentResponse: 3,
+  },
+  cloud: {
+    security: 6,
+    complianceReadiness: 18,
+    incidentResponse: 5,
+  },
+  ot: {
+    security: 3,
+    complianceReadiness: 20,
+    incidentResponse: 7,
+  },
+  software: {
+    security: 1,
+    complianceReadiness: 8,
+    incidentResponse: 2,
+  },
+  newemerging: {
+    security: 1,
+    complianceReadiness: 4,
+    incidentResponse: 1,
+  },
+};
+
 const CAPABILITY_INPUTS = [
   {
     name: 'Physical IT asset management',
@@ -164,6 +200,51 @@ function maturityFromCoverage(coverage: number): number {
   return CURRENT_MATURITY + (TARGET_MATURITY - CURRENT_MATURITY) * coverage;
 }
 
+function scopedPillars(
+  selectedWorkstreamIds: Set<WorkstreamId>,
+  coverage: number,
+): CapabilityRoiPillars {
+  const selectedContributions = [...selectedWorkstreamIds].reduce(
+    (pillars, workstreamId) => {
+      const contribution = WORKSTREAM_PILLAR_CONTRIBUTIONS[workstreamId];
+
+      return {
+        security: pillars.security + contribution.security,
+        complianceReadiness:
+          pillars.complianceReadiness + contribution.complianceReadiness,
+        incidentResponse: pillars.incidentResponse + contribution.incidentResponse,
+      };
+    },
+    {
+      security: 0,
+      complianceReadiness: 0,
+      incidentResponse: 0,
+    },
+  );
+
+  return {
+    money: Math.round(coverage * 100),
+    security: Math.round(
+      clamp(selectedContributions.security, 0, MAX_SECURITY_REDUCTION_PCT) *
+        coverage,
+    ),
+    complianceReadiness: Math.round(
+      clamp(
+        selectedContributions.complianceReadiness,
+        0,
+        MAX_COMPLIANCE_READINESS_PCT,
+      ) * coverage,
+    ),
+    incidentResponse: Math.round(
+      clamp(
+        selectedContributions.incidentResponse,
+        0,
+        MAX_INCIDENT_RESPONSE_UPLIFT_PCT,
+      ) * coverage,
+    ),
+  };
+}
+
 const BUDGET_COVERAGE_PRIORITY: WorkstreamId[] = [
   'hardware',
   'ai',
@@ -239,9 +320,11 @@ export function scopedCapabilityRoiSummary(
     0,
   );
   const summary = capabilityRoiSummary(budgetSEK, scopeCostSEK, scopeBenefitSEK);
+  const coverage = fundingCoverage(budgetSEK, scopeCostSEK);
 
   return {
     ...summary,
+    pillars: scopedPillars(selectedWorkstreamIds, coverage),
     scopeCostSEK,
     scopeBenefitSEK,
   };

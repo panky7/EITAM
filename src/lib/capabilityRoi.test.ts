@@ -56,6 +56,54 @@ describe('scopedCapabilityRoiSummary', () => {
     expect(summary.multiple).toBeCloseTo(1.3188, 4);
     expect(summary.fundedScopePct).toBe(100);
     expect(summary.maturity.projected).toBe(3);
+    expect(summary.pillars).toEqual({
+      money: 100,
+      security: 9,
+      complianceReadiness: 30,
+      incidentResponse: 15,
+    });
+  });
+
+  it('improves security compliance and incident signals as more priority scopes are added', () => {
+    const minimumViable = scopedCapabilityRoiSummary(
+      new Set(['hardware']),
+      8_625_000,
+    );
+    const riskFirst = scopedCapabilityRoiSummary(
+      new Set(['hardware', 'ai']),
+      17_250_000,
+    );
+    const securityFirst = scopedCapabilityRoiSummary(
+      new Set(['hardware', 'ai', 'cloud']),
+      25_875_000,
+    );
+    const complianceReady = scopedCapabilityRoiSummary(
+      new Set(['hardware', 'ai', 'cloud', 'ot']),
+      31_050_000,
+    );
+
+    expect(minimumViable.pillars).toMatchObject({
+      security: 4,
+      complianceReadiness: 8,
+      incidentResponse: 12,
+    });
+    expect(riskFirst.pillars.security).toBeGreaterThan(minimumViable.pillars.security);
+    expect(riskFirst.pillars.complianceReadiness).toBeGreaterThan(
+      minimumViable.pillars.complianceReadiness,
+    );
+    expect(riskFirst.pillars.incidentResponse).toBeGreaterThan(
+      minimumViable.pillars.incidentResponse,
+    );
+    expect(securityFirst.pillars).toMatchObject({
+      security: 15,
+      complianceReadiness: 48,
+      incidentResponse: 20,
+    });
+    expect(complianceReady.pillars).toMatchObject({
+      security: 18,
+      complianceReadiness: 68,
+      incidentResponse: 27,
+    });
   });
 
   it('treats empty selected scope as zero requirement and zero return', () => {

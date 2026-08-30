@@ -9,7 +9,7 @@ import {
   type ModelScopePresetId,
 } from '../lib/capabilityRoi';
 import { roadmapItemsForScope, roadmapModelSummary } from '../lib/roadmap';
-import { INK, fmtM } from '../lib/format';
+import { INK, fmtM, fmtX } from '../lib/format';
 
 const periods = [
   { label: '3 months', sub: 'Mid-Aug 2026' },
@@ -113,6 +113,12 @@ export function InteractiveRoadmapTimeline({
         <div className="rounded-lg border border-stone-200 bg-stone-50 p-3">
           <div className="text-xs font-semibold uppercase tracking-wide" style={{ color: INK }}>
             Roadmap controls
+          </div>
+          <div className="mt-3 grid gap-2 sm:grid-cols-4">
+            <ControlMetric label="Budget" value={fmtM(roi.budgetSEK)} />
+            <ControlMetric label="ROI" value={fmtX(roi.multiple)} />
+            <ControlMetric label="Value" value={fmtM(roi.valueSEK)} />
+            <ControlMetric label="Items" value={String(highlightedItemCount)} />
           </div>
           <div className="mt-3 flex flex-wrap gap-2">
             {presetModels.map((preset) => {
@@ -275,6 +281,19 @@ function HeaderMetric({ label, value }: { label: string; value: string }) {
     <div>
       <div className="text-[10px] uppercase tracking-widest text-white/60">{label}</div>
       <div className="mt-1 font-mono text-base font-semibold tabular-nums">{value}</div>
+    </div>
+  );
+}
+
+function ControlMetric({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-md border border-stone-200 bg-white px-3 py-2">
+      <div className="text-[10px] font-medium uppercase tracking-wide text-slate-500">
+        {label}
+      </div>
+      <div className="mt-0.5 font-mono text-sm font-semibold tabular-nums" style={{ color: INK }}>
+        {value}
+      </div>
     </div>
   );
 }
