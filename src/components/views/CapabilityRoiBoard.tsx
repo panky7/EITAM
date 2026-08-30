@@ -196,7 +196,7 @@ export function CapabilityRoiBoard() {
               </div>
               <div className="flex gap-2 text-sm leading-5">
                 <ShieldCheck className="mt-0.5 shrink-0 text-green-300" size={16} />
-                <span>Qualys integration improving asset-risk and vulnerability posture.</span>
+                <span>Positive written feedback received from business units on the asset data uplift.</span>
               </div>
             </div>
           </div>
@@ -453,20 +453,6 @@ function PartnerDetail({ partner }: { partner: PartnerContribution }) {
             {partner.name}
           </h3>
           <p className="mt-1 text-sm text-slate-600">{partner.role}</p>
-        </div>
-        <div className="grid grid-cols-2 gap-2 text-right text-[11px] text-slate-500">
-          <div className="rounded-md bg-white px-3 py-2">
-            Investment
-            <strong className="block font-mono text-xs text-slate-950">
-              {fmtM(partner.investmentSEK)}
-            </strong>
-          </div>
-          <div className="rounded-md bg-white px-3 py-2">
-            Enabled value
-            <strong className="block font-mono text-xs text-slate-950">
-              {fmtM(partner.valueSEK)}
-            </strong>
-          </div>
         </div>
       </div>
 
