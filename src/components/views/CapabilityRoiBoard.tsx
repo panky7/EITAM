@@ -179,24 +179,32 @@ export function CapabilityRoiBoard() {
               <div className="flex gap-2 text-sm leading-5">
                 <Laptop className="mt-0.5 shrink-0 text-green-300" size={16} />
                 <span>
-                  Managed endpoint inventory above <strong>90%</strong> coverage.
+                  <strong>362k</strong> IT enterprise asset visibility established.
                 </span>
               </div>
               <div className="flex gap-2 text-sm leading-5">
-                <Network className="mt-0.5 shrink-0 text-green-300" size={16} />
+                <ShieldCheck className="mt-0.5 shrink-0 text-green-300" size={16} />
                 <span>
-                  Managed network gear inventory above <strong>90%</strong> coverage.
+                  <strong>55%</strong> improved asset trust for security.
                 </span>
               </div>
               <div className="flex gap-2 text-sm leading-5">
                 <Coins className="mt-0.5 shrink-0 text-green-300" size={16} />
                 <span>
-                  <strong>10M SEK</strong> license and unused-device value unlocked.
+                  <strong>10M SEK</strong> annual license savings.
                 </span>
               </div>
               <div className="flex gap-2 text-sm leading-5">
-                <ShieldCheck className="mt-0.5 shrink-0 text-green-300" size={16} />
-                <span>Positive written feedback received from business units on the asset data uplift.</span>
+                <Network className="mt-0.5 shrink-0 text-green-300" size={16} />
+                <span>
+                  <strong>30%</strong> reduction in incident identification time.
+                </span>
+              </div>
+              <div className="flex gap-2 text-sm leading-5">
+                <BadgeCheck className="mt-0.5 shrink-0 text-green-300" size={16} />
+                <span>
+                  <strong>40%</strong> improvement in ISO 27K compliance.
+                </span>
               </div>
             </div>
           </div>
