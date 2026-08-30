@@ -638,6 +638,16 @@ function ScopeWiki({
 
   return (
     <section className="rounded-lg border border-stone-200 bg-white p-4 shadow-sm shadow-stone-200/70">
+      <div className="mb-4">
+        <div className="text-sm font-semibold uppercase tracking-wide" style={{ color: INK }}>
+          Capability Scope Cards
+        </div>
+        <p className="mt-1 text-sm leading-6 text-slate-600">
+          Workstream reference cards showing each scope's cost, value, highlights and
+          year-one boundary.
+        </p>
+      </div>
+
       <div className="flex min-w-0 flex-wrap gap-2">
         {rows.map((row) => {
           const active = row.id === activeScopeId;
