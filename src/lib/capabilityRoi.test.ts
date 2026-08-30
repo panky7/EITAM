@@ -85,6 +85,13 @@ describe('modelScopePreset', () => {
     expect(preset.workstreamIds).toEqual(['hardware', 'ai', 'cloud']);
   });
 
+  it('sets risk-first modeling to the hardware and AI risk scope', () => {
+    const preset = modelScopePreset('risk_first');
+
+    expect(preset.budgetSEK).toBe(17_250_000);
+    expect(preset.workstreamIds).toEqual(['hardware', 'ai']);
+  });
+
   it('sets compliance-ready modeling to hardware, AI, cloud and OT scope', () => {
     const preset = modelScopePreset('compliance_ready');
 

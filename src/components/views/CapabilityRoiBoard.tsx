@@ -12,6 +12,7 @@ import {
   Rocket,
   Shield,
   ShieldCheck,
+  ShieldAlert,
   Wrench,
 } from 'lucide-react';
 import { InteractiveRoadmapTimeline } from '../InteractiveRoadmapTimeline';
@@ -50,6 +51,7 @@ import {
 
 const presets = [
   { id: 'minimum_viable', icon: Wrench },
+  { id: 'risk_first', icon: ShieldAlert },
   { id: 'security_first', icon: Shield },
   { id: 'compliance_ready', icon: BadgeCheck },
   { id: 'full_uplift', icon: Rocket },
@@ -359,18 +361,22 @@ export function CapabilityRoiBoard() {
         </div>
       </section>
 
-      <PartnerContributionModel partners={PARTNER_MODEL} />
-
-      <ScopeWiki rows={wikiRows} />
-
       <InteractiveRoadmapTimeline
         budgetSEK={budgetSEK}
         selectedWorkstreamIds={selectedWorkstreamIds}
         scopeCostSEK={summary.scopeCostSEK}
         scopeBenefitSEK={summary.scopeBenefitSEK}
+        presetModels={presetModels}
+        onApplyPreset={applyPreset}
+        onToggleWorkstream={toggleWorkstream}
+        onSelectAllWorkstreams={selectAllWorkstreams}
       />
 
+      <ScopeWiki rows={wikiRows} />
+
       <MaturityDeck rows={rows} maturity={maturity} />
+
+      <PartnerContributionModel partners={PARTNER_MODEL} />
 
       <KnowledgeDeck cards={ROADMAP_KNOWLEDGE_CARDS} />
     </div>

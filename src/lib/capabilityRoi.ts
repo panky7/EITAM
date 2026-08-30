@@ -30,6 +30,7 @@ export interface ScopedCapabilityRoiSummary extends CapabilityRoiSummary {
 
 export type ModelScopePresetId =
   | 'minimum_viable'
+  | 'risk_first'
   | 'security_first'
   | 'compliance_ready'
   | 'full_uplift';
@@ -128,6 +129,11 @@ const MODEL_SCOPE_PRESETS: Record<ModelScopePresetId, Omit<ModelScopePreset, 'id
     label: 'Minimum viable',
     budgetSEK: 8_625_000,
     workstreamIds: ['hardware'],
+  },
+  risk_first: {
+    label: 'Risk first',
+    budgetSEK: 17_250_000,
+    workstreamIds: ['hardware', 'ai'],
   },
   security_first: {
     label: 'Security first',
