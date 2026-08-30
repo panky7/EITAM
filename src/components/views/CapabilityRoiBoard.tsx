@@ -34,6 +34,7 @@ import {
   type ModelScopePresetId,
   type ScopeWikiRow,
   scopedCapabilityRoiSummary,
+  scopeIdsCoveredByBudget,
 } from '../../lib/capabilityRoi';
 import { WORKSTREAMS, type WorkstreamId } from '../../data/workstreams';
 import {
@@ -148,6 +149,11 @@ export function CapabilityRoiBoard() {
     setSelectedWorkstreamIds(new Set(preset.workstreamIds));
   };
 
+  const changeBudget = (nextBudgetSEK: number) => {
+    setBudgetSEK(nextBudgetSEK);
+    setSelectedWorkstreamIds(new Set(scopeIdsCoveredByBudget(nextBudgetSEK)));
+  };
+
   return (
     <div className="space-y-4">
       <section className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-lg shadow-slate-200/60">
@@ -218,7 +224,7 @@ export function CapabilityRoiBoard() {
             max={TOTAL_FULL_COST}
             step={100_000}
             value={budgetSEK}
-            onChange={(event) => setBudgetSEK(Number(event.target.value))}
+            onChange={(event) => changeBudget(Number(event.target.value))}
           />
           <div className="mt-4 flex flex-wrap gap-2">
             {presetModels.map((preset) => {

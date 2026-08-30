@@ -5,6 +5,7 @@ import {
   capabilityRows,
   capabilityRoiSummary,
   modelScopePreset,
+  scopeIdsCoveredByBudget,
   scopeWikiRows,
   scopedCapabilityRoiSummary,
   scopeWikiRowById,
@@ -77,6 +78,20 @@ describe('modelScopePreset', () => {
     expect(preset.workstreamIds).toEqual(['hardware', 'ai']);
   });
 
+  it('sets security-first modeling to the hardware and AI risk scope', () => {
+    const preset = modelScopePreset('security_first');
+
+    expect(preset.budgetSEK).toBe(17_250_000);
+    expect(preset.workstreamIds).toEqual(['hardware', 'ai']);
+  });
+
+  it('sets compliance-ready modeling to hardware, AI and OT scope', () => {
+    const preset = modelScopePreset('compliance_ready');
+
+    expect(preset.budgetSEK).toBe(22_425_000);
+    expect(preset.workstreamIds).toEqual(['hardware', 'ai', 'ot']);
+  });
+
   it('sets full uplift to all workstreams and full plan cost', () => {
     const preset = modelScopePreset('full_uplift');
 
@@ -86,6 +101,24 @@ describe('modelScopePreset', () => {
       'ai',
       'cloud',
       'ot',
+      'software',
+      'newemerging',
+    ]);
+  });
+});
+
+describe('scopeIdsCoveredByBudget', () => {
+  it('selects only fully coverable scopes in roadmap priority order', () => {
+    expect(scopeIdsCoveredByBudget(0)).toEqual([]);
+    expect(scopeIdsCoveredByBudget(8_624_999)).toEqual([]);
+    expect(scopeIdsCoveredByBudget(8_625_000)).toEqual(['hardware']);
+    expect(scopeIdsCoveredByBudget(17_250_000)).toEqual(['hardware', 'ai']);
+    expect(scopeIdsCoveredByBudget(22_425_000)).toEqual(['hardware', 'ai', 'ot']);
+    expect(scopeIdsCoveredByBudget(TOTAL_FULL_COST)).toEqual([
+      'hardware',
+      'ai',
+      'ot',
+      'cloud',
       'software',
       'newemerging',
     ]);

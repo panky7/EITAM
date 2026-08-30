@@ -131,13 +131,13 @@ const MODEL_SCOPE_PRESETS: Record<ModelScopePresetId, Omit<ModelScopePreset, 'id
   },
   security_first: {
     label: 'Security first',
-    budgetSEK: 31_050_000,
-    workstreamIds: ['hardware', 'ai', 'cloud', 'ot'],
+    budgetSEK: 17_250_000,
+    workstreamIds: ['hardware', 'ai'],
   },
   compliance_ready: {
     label: 'Compliance ready',
     budgetSEK: 22_425_000,
-    workstreamIds: ['ai', 'cloud', 'software'],
+    workstreamIds: ['hardware', 'ai', 'ot'],
   },
   full_uplift: {
     label: 'Full uplift',
@@ -156,6 +156,37 @@ function fundingCoverage(budgetSEK: number, fullCostSEK = TOTAL_FULL_COST): numb
 
 function maturityFromCoverage(coverage: number): number {
   return CURRENT_MATURITY + (TARGET_MATURITY - CURRENT_MATURITY) * coverage;
+}
+
+const BUDGET_COVERAGE_PRIORITY: WorkstreamId[] = [
+  'hardware',
+  'ai',
+  'ot',
+  'cloud',
+  'software',
+  'newemerging',
+];
+
+export function scopeIdsCoveredByBudget(budgetSEK: number): WorkstreamId[] {
+  const covered: WorkstreamId[] = [];
+  let requiredSEK = 0;
+
+  for (const workstreamId of BUDGET_COVERAGE_PRIORITY) {
+    const workstream = WORKSTREAMS.find((item) => item.id === workstreamId);
+    if (!workstream) {
+      continue;
+    }
+
+    const nextRequiredSEK = requiredSEK + workstream.costSEK;
+    if (nextRequiredSEK > budgetSEK) {
+      break;
+    }
+
+    covered.push(workstreamId);
+    requiredSEK = nextRequiredSEK;
+  }
+
+  return covered;
 }
 
 export function capabilityRoiSummary(
