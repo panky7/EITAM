@@ -126,18 +126,18 @@ const CAPABILITY_INPUTS = [
 const MODEL_SCOPE_PRESETS: Record<ModelScopePresetId, Omit<ModelScopePreset, 'id'>> = {
   minimum_viable: {
     label: 'Minimum viable',
-    budgetSEK: 17_250_000,
-    workstreamIds: ['hardware', 'ai'],
+    budgetSEK: 8_625_000,
+    workstreamIds: ['hardware'],
   },
   security_first: {
     label: 'Security first',
-    budgetSEK: 17_250_000,
-    workstreamIds: ['hardware', 'ai'],
+    budgetSEK: 25_875_000,
+    workstreamIds: ['hardware', 'ai', 'cloud'],
   },
   compliance_ready: {
     label: 'Compliance ready',
-    budgetSEK: 22_425_000,
-    workstreamIds: ['hardware', 'ai', 'ot'],
+    budgetSEK: 31_050_000,
+    workstreamIds: ['hardware', 'ai', 'cloud', 'ot'],
   },
   full_uplift: {
     label: 'Full uplift',
@@ -161,8 +161,8 @@ function maturityFromCoverage(coverage: number): number {
 const BUDGET_COVERAGE_PRIORITY: WorkstreamId[] = [
   'hardware',
   'ai',
-  'ot',
   'cloud',
+  'ot',
   'software',
   'newemerging',
 ];

@@ -74,22 +74,22 @@ describe('modelScopePreset', () => {
   it('sets both budget and workstream scope for minimum viable modeling', () => {
     const preset = modelScopePreset('minimum_viable');
 
-    expect(preset.budgetSEK).toBe(17_250_000);
-    expect(preset.workstreamIds).toEqual(['hardware', 'ai']);
+    expect(preset.budgetSEK).toBe(8_625_000);
+    expect(preset.workstreamIds).toEqual(['hardware']);
   });
 
-  it('sets security-first modeling to the hardware and AI risk scope', () => {
+  it('sets security-first modeling to the hardware, AI and cloud risk scope', () => {
     const preset = modelScopePreset('security_first');
 
-    expect(preset.budgetSEK).toBe(17_250_000);
-    expect(preset.workstreamIds).toEqual(['hardware', 'ai']);
+    expect(preset.budgetSEK).toBe(25_875_000);
+    expect(preset.workstreamIds).toEqual(['hardware', 'ai', 'cloud']);
   });
 
-  it('sets compliance-ready modeling to hardware, AI and OT scope', () => {
+  it('sets compliance-ready modeling to hardware, AI, cloud and OT scope', () => {
     const preset = modelScopePreset('compliance_ready');
 
-    expect(preset.budgetSEK).toBe(22_425_000);
-    expect(preset.workstreamIds).toEqual(['hardware', 'ai', 'ot']);
+    expect(preset.budgetSEK).toBe(31_050_000);
+    expect(preset.workstreamIds).toEqual(['hardware', 'ai', 'cloud', 'ot']);
   });
 
   it('sets full uplift to all workstreams and full plan cost', () => {
@@ -113,12 +113,22 @@ describe('scopeIdsCoveredByBudget', () => {
     expect(scopeIdsCoveredByBudget(8_624_999)).toEqual([]);
     expect(scopeIdsCoveredByBudget(8_625_000)).toEqual(['hardware']);
     expect(scopeIdsCoveredByBudget(17_250_000)).toEqual(['hardware', 'ai']);
-    expect(scopeIdsCoveredByBudget(22_425_000)).toEqual(['hardware', 'ai', 'ot']);
+    expect(scopeIdsCoveredByBudget(25_875_000)).toEqual([
+      'hardware',
+      'ai',
+      'cloud',
+    ]);
+    expect(scopeIdsCoveredByBudget(31_050_000)).toEqual([
+      'hardware',
+      'ai',
+      'cloud',
+      'ot',
+    ]);
     expect(scopeIdsCoveredByBudget(TOTAL_FULL_COST)).toEqual([
       'hardware',
       'ai',
-      'ot',
       'cloud',
+      'ot',
       'software',
       'newemerging',
     ]);
