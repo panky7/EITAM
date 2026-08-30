@@ -10,7 +10,7 @@ import { ROADMAP_LANES, type RoadmapFilter, type RoadmapItem } from '../data/roa
 import type { WorkstreamId } from '../data/workstreams';
 import { capabilityRoiSummary } from '../lib/capabilityRoi';
 import { roadmapControlSummary, roadmapModelSummary } from '../lib/roadmap';
-import { GOOD, HM_RED, INK, WARN, fmtM } from '../lib/format';
+import { INK, fmtM } from '../lib/format';
 
 const periods = [
   { label: '3 months', sub: 'Mid-Aug 2026' },
@@ -235,7 +235,7 @@ export function InteractiveRoadmapTimeline({
         </div>
       </div>
 
-      <div className="grid gap-4 border-t border-stone-200 bg-stone-50 p-4 xl:grid-cols-[minmax(280px,0.7fr)_minmax(0,1.3fr)]">
+      <div className="border-t border-stone-200 bg-stone-50 p-4">
         <div className="rounded-lg border border-stone-200 bg-white p-4">
           <div className="text-xs font-semibold uppercase tracking-wide" style={{ color: INK }}>
             {controlSummary.headline}
@@ -267,13 +267,6 @@ export function InteractiveRoadmapTimeline({
             })}
           </div>
         </div>
-
-        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-          <RoadmapValue label="Money" value={fmtM(roi.valueSEK)} sub="Directional value" color={GOOD} />
-          <RoadmapValue label="Security posture" value={`${roi.pillars.security}%`} sub="Risk reduction" color={HM_RED} />
-          <RoadmapValue label="Compliance readiness" value={`${roi.pillars.complianceReadiness}%`} sub="EU AI Act and audit readiness" color="#5B3AA4" />
-          <RoadmapValue label="Incident response" value={`${roi.pillars.incidentResponse}%`} sub="MTTR uplift" color={WARN} />
-        </div>
       </div>
     </section>
   );
@@ -284,28 +277,6 @@ function HeaderMetric({ label, value }: { label: string; value: string }) {
     <div>
       <div className="text-[10px] uppercase tracking-widest text-white/60">{label}</div>
       <div className="mt-1 font-mono text-base font-semibold tabular-nums">{value}</div>
-    </div>
-  );
-}
-
-function RoadmapValue({
-  label,
-  value,
-  sub,
-  color,
-}: {
-  label: string;
-  value: string;
-  sub: string;
-  color: string;
-}) {
-  return (
-    <div className="border-l-4 bg-white px-3 py-2" style={{ borderColor: color }}>
-      <div className="text-xs uppercase tracking-wide text-slate-500">{label}</div>
-      <div className="mt-1 font-mono text-lg font-semibold tabular-nums" style={{ color: INK }}>
-        {value}
-      </div>
-      <div className="mt-1 text-xs text-slate-500">{sub}</div>
     </div>
   );
 }
