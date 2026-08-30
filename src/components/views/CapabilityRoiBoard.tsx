@@ -313,51 +313,56 @@ export function CapabilityRoiBoard() {
           </div>
         </div>
 
-        <div className="grid gap-2 md:grid-cols-4 xl:grid-cols-2 2xl:grid-cols-4">
-          {topMetrics.map((metric) => {
-            if (metric.key === 'financial') {
+        <div className="rounded-lg border border-stone-200 bg-white p-3 shadow-sm shadow-stone-200/70">
+          <div className="text-sm font-semibold uppercase tracking-wide" style={{ color: INK }}>
+            Expected ROI
+          </div>
+          <div className="mt-3 grid gap-2 md:grid-cols-4 xl:grid-cols-2 2xl:grid-cols-4">
+            {topMetrics.map((metric) => {
+              if (metric.key === 'financial') {
+                return (
+                  <MetricCard
+                    key={metric.key}
+                    label={metric.label}
+                    value={fmtX(summary.multiple)}
+                    sub={`${fmtM(summary.valueSEK)} directional value`}
+                    color={metric.color}
+                  />
+                );
+              }
+              if (metric.key === 'security') {
+                return (
+                  <MetricCard
+                    key={metric.key}
+                    label={metric.label}
+                    value={`${summary.pillars.security}%`}
+                    sub="Risk reduction"
+                    color={metric.color}
+                  />
+                );
+              }
+              if (metric.key === 'compliance') {
+                return (
+                  <MetricCard
+                    key={metric.key}
+                    label={metric.label}
+                    value={`${summary.pillars.complianceReadiness}%`}
+                    sub="Readiness"
+                    color={metric.color}
+                  />
+                );
+              }
               return (
                 <MetricCard
                   key={metric.key}
                   label={metric.label}
-                  value={fmtX(summary.multiple)}
-                  sub={`${fmtM(summary.valueSEK)} directional value`}
+                  value={`${summary.pillars.incidentResponse}%`}
+                  sub="MTTR uplift"
                   color={metric.color}
                 />
               );
-            }
-            if (metric.key === 'security') {
-              return (
-                <MetricCard
-                  key={metric.key}
-                  label={metric.label}
-                  value={`${summary.pillars.security}%`}
-                  sub="Risk reduction"
-                  color={metric.color}
-                />
-              );
-            }
-            if (metric.key === 'compliance') {
-              return (
-                <MetricCard
-                  key={metric.key}
-                  label={metric.label}
-                  value={`${summary.pillars.complianceReadiness}%`}
-                  sub="Readiness"
-                  color={metric.color}
-                />
-              );
-            }
-            return (
-              <MetricCard
-                key={metric.key}
-                label={metric.label}
-                value={`${summary.pillars.incidentResponse}%`}
-                sub="MTTR uplift"
-                color={metric.color}
-              />
-            );
-          })}
+            })}
+          </div>
         </div>
       </section>
 
@@ -515,7 +520,7 @@ function KnowledgeDeck({ cards }: { cards: KnowledgeCard[] }) {
     <section className="overflow-hidden rounded-lg border border-stone-200 bg-white shadow-sm shadow-stone-200/70">
       <div className="bg-[#071B4D] px-4 py-3 text-white">
         <div className="text-sm font-semibold uppercase tracking-wide">
-          Enterprise Asset Management Knowledge Deck
+          Expected Outcomes
         </div>
       </div>
 
