@@ -424,10 +424,6 @@ function PartnerContributionModel({
                   <span className={`mt-1 block text-xs leading-5 ${active ? 'text-white/75' : 'text-slate-500'}`}>
                     {partner.role}
                   </span>
-                  <span className="mt-2 grid grid-cols-2 gap-2 font-mono text-[11px]">
-                    <span>{fmtM(partner.investmentSEK)}</span>
-                    <span>{fmtM(partner.valueSEK)}</span>
-                  </span>
                 </span>
               </span>
               <ChevronDown
