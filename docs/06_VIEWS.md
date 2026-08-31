@@ -287,9 +287,9 @@ instead of `StatCard`/`WorkstreamTile`.
 **Memoized derivations:**
 
 - `scopedCapabilityRoiSummary(selectedWorkstreamIds, budgetSEK)`
-  (`src/lib/capabilityRoi.ts:220-242`): sums the *selected* workstreams' cost
+  (`src/lib/capabilityRoi.ts:325-349`): sums the *selected* workstreams' cost
   (`scopeCostSEK`) and benefit (`scopeBenefitSEK`), then runs `capabilityRoiSummary` against
-  those scoped totals (`:192-218`):
+  those scoped totals (`:297-323`):
   - `coverage = clamp(budget / scopeCost, 0, 1)` — fraction of the selected scope the budget buys
     (0-guarded denominator at `:153-155`).
   - `valueSEK = scopeBenefit × coverage`; `budgetSEK` reported is clamped to
@@ -298,32 +298,40 @@ instead of `StatCard`/`WorkstreamTile`.
     scope's own benefit ÷ cost.
   - `fundedScopePct = round(coverage × 100)`.
   - **Maturity model**: `current = 1`, `target = 3`,
-    `projected = 1 + (3 − 1) × coverage` (`:64-65`, `:157-159`) — full funding moves the
+    `projected = 1 + (3 − 1) × coverage` (`:65-66`, `:217-219`) — full funding moves the
     programme from maturity level 1 ("Ad hoc") to 3 ("Managed").
-  - **Value pillars** (`:66-68`, `:211-216`): money `= round(coverage × 100)`, security risk
-    reduction `= round(20 × coverage)`% (cap 20%), compliance readiness `= round(80 × coverage)`%
-    (cap 80%), incident-response/MTTR uplift `= round(30 × coverage)`% (cap 30%).
-- `capabilityRows(budgetSEK, summary.scopeCostSEK, selectedWorkstreamIds)` (`:251-278`): 8
-  capability rows from `CAPABILITY_INPUTS` (`:70-124`). Each capability lists the workstreams
+  - **Value pillars** (`:65-70`, `:206-263`): security risk reduction and compliance readiness
+    (both capped at 80%, aligned to the Strategic Value Framework) come from per-workstream
+    contributions in `WORKSTREAM_PILLAR_CONTRIBUTIONS` — only **hardware, AI, cloud and OT**
+    contribute (fully funding exactly those four reaches 80/80; Software and New & Emerging
+    contribute 0). The **money pillar is benefit-weighted**:
+    `round((selectedBenefit ÷ 43M) × coverage × 100)` (SAM+Cloud funded → 32%, hardware → 45%,
+    full scope → 100%). Incident-response/MTTR uplift keeps its 30% cap. The security stat card's
+    sub-label reads "Unmanaged tech risk reduction" (`CapabilityRoiBoard.tsx:339`).
+- `capabilityRows(budgetSEK, summary.scopeCostSEK, selectedWorkstreamIds)` (`:358-385`): 8
+  capability rows from `CAPABILITY_INPUTS` (`:110-179`). Each capability lists the workstreams
   that feed it and a `weight` (0.58–0.98). If **any** feeding workstream is selected, the row's
   `projectedMaturity` follows the global maturity curve and its
   `returnSignalPct = round(clamp(coverage × weight, 0, 1) × 100)`; if none are selected the row
   stays at maturity 1.0 with 0% return signal.
-- `capabilityMaturitySummary(rows)` (`:280-299`): plain averages of current/projected across
+- `capabilityMaturitySummary(rows)` (`:387-406`): plain averages of current/projected across
   rows (so deselecting workstreams drags the projected average down), rounded to 2 decimals; an
   empty row list returns the 1→1 baseline.
-- `scopeWikiRows()` (`:301-313`): per-workstream reference cards reshaped from `WORKSTREAMS`
+- `scopeWikiRows()` (`:408-420`): per-workstream reference cards reshaped from `WORKSTREAMS`
   (name, short code, cost, benefit, year-one outcome as summary, scope items, year-two outcome,
   highlight labels).
 
-**Control handlers — note the deliberate coupling:**
+**Control handlers — bidirectional budget ↔ scope sync** (both the Model controls panel and
+the Roadmap controls panel in `InteractiveRoadmapTimeline` call these same handlers, so the two
+surfaces can never disagree):
 
-- `toggleWorkstream(id)` (`:130-140`): adds/removes a scope chip. **Does not touch the budget** —
-  deselecting a workstream shrinks `scopeCostSEK`, so the same budget now covers a larger
-  percentage of the remaining scope (coverage denominator shrinks).
-- `selectAllWorkstreams()` (`:142-144`): re-selects all 6.
+- `toggleWorkstream(id)` (`:136-156`): adds/removes a scope chip **and snaps the available
+  investment slider to the new scope's total cost** (Σ `costSEK` of the selected ids) — the same
+  "fully fund the selected scope" semantics the presets use. Hardware only → 8.625M; deselect
+  everything → 0 (the empty-scope zero-guards in `scopedCapabilityRoiSummary` handle it).
+- `selectAllWorkstreams()` (`:158-161`): re-selects all 6 and sets budget to `TOTAL_FULL_COST`.
 - `applyPreset(id)` (`:146-150`): sets budget **and** selection together from
-  `modelScopePreset()` (`src/lib/capabilityRoi.ts:126-147`, `:244-249`):
+  `modelScopePreset()` (`src/lib/capabilityRoi.ts:166-204`, `:351-356`):
 
   | Preset | Budget (SEK) | Workstreams | Rationale |
   |---|---|---|---|
@@ -333,7 +341,7 @@ instead of `StatCard`/`WorkstreamTile`.
   | Full uplift | 41,400,000 | all 6 | The complete plan. |
 
 - `changeBudget(sek)` (`:152-155`): sets the slider **and auto-derives the selection** via
-  `scopeIdsCoveredByBudget()` (`:170-190`) — a greedy walk down the fixed priority order
+  `scopeIdsCoveredByBudget()` (`:275-295`) — a greedy walk down the fixed priority order
   hardware → ai → cloud → ot → software → newemerging, adding each workstream only while the
   running cost stays within budget. So dragging the slider to 20M selects hardware + ai + cloud
   would exceed… precisely: hardware (8.625M) + ai (8.625M) = 17.25M; adding cloud → 25.875M > 20M,

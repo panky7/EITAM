@@ -27,7 +27,7 @@ audience cares about.
 | Type | Lines | Purpose |
 |---|---|---|
 | `CapabilityMaturity` | `:4-8` | `current`, `projected`, `target` maturity levels on a 1–3 scale. |
-| `CapabilityRoiPillars` | `:10-15` | Four percentage signals: `money` (funded scope %), `security` (% risk reduction), `complianceReadiness` (% readiness), `incidentResponse` (% uplift). |
+| `CapabilityRoiPillars` | `:10-15` | Four percentage signals: `money` (benefit-weighted % of the 43M value potential in the scoped path; funded coverage % in the budget-only path), `security` (% unmanaged technology risk reduction), `complianceReadiness` (% readiness), `incidentResponse` (% uplift). |
 | `CapabilityRoiSummary` | `:17-24` | Board headline: effective budget, value unlocked, multiple, funded scope %, maturity triple, pillars. |
 | `ScopedCapabilityRoiSummary` | `:26-29` | Adds `scopeCostSEK` / `scopeBenefitSEK` — the full cost and benefit of just the selected workstreams ("investment requirement" / "value potential of this scope"). |
 | `ModelScopePresetId` | `:31-35` | `'minimum_viable' \| 'security_first' \| 'compliance_ready' \| 'full_uplift'`. |
@@ -35,20 +35,21 @@ audience cares about.
 | `CapabilityRow` | `:44-50` | One board row: capability name, outcome, current/projected maturity, `returnSignalPct`. |
 | `ScopeWikiRow` | `:52-62` | A workstream "wiki" card: cost, benefit, year-one summary, in-scope items, out-of-scope (year-two) boundary, value-highlight labels. |
 
-### 1.2 Modeling constants (`:64-68`)
+### 1.2 Modeling constants (`:65-70`)
 
 | Constant | Value | Business meaning |
 |---|---|---|
 | `CURRENT_MATURITY` | `1` | Today's asset-management maturity (initial/ad-hoc) on the 1–3 scale. |
 | `TARGET_MATURITY` | `3` | "Managed" maturity the 12-month programme targets at full funding. |
-| `MAX_SECURITY_REDUCTION_PCT` | `20` | At full funding, up to **20% reduction** in asset-related security risk. |
-| `MAX_COMPLIANCE_READINESS_PCT` | `80` | At full funding, up to **80% compliance readiness** (e.g. EU AI Act). |
-| `MAX_INCIDENT_RESPONSE_UPLIFT_PCT` | `30` | At full funding, up to **30% faster/better incident response**. |
+| `MAX_SECURITY_REDUCTION_PCT` | `80` | At full funding of the risk-relevant scope (hardware + AI + cloud + OT), up to **80% reduction in unmanaged technology risk** — aligned to the Strategic Value Framework target (`src/data/knowledgeDeck.ts:150`). Was `20` before the framework alignment. |
+| `MAX_COMPLIANCE_READINESS_PCT` | `80` | At full funding of the same four workstreams, up to **80% compliance readiness** (e.g. EU AI Act). |
+| `MAX_INCIDENT_RESPONSE_UPLIFT_PCT` | `30` | At full funding, up to **30% faster/better incident response** (no framework counterpart; kept as-is). |
 
-The three "MAX" caps are directional claims carried from the client material — like the benefit
-figures, they are estimates, not audited numbers.
+The three "MAX" caps are directional claims — like the benefit figures, they are estimates, not
+audited numbers. The security cap is now anchored to the Strategic Value Framework's
+"Unmanaged technology risk: 80% reduction" target.
 
-### 1.3 Capability model (`CAPABILITY_INPUTS`, `:70-124`)
+### 1.3 Capability model (`CAPABILITY_INPUTS`, `:110-161`)
 
 Eight enterprise capabilities, each with a subjective **weight** (how strongly full funding
 expresses as progress in that capability) and the set of workstreams that deliver it:
@@ -65,12 +66,12 @@ expresses as progress in that capability) and the set of workstreams that delive
 | OT / industrial asset visibility | 0.58 | ot |
 
 A capability counts as **in scope** when *any* of its delivering workstreams is selected
-(`:261-263`). Weights are display heuristics — they shape the `returnSignalPct` bar, nothing
+(`:368-370`). Weights are display heuristics — they shape the `returnSignalPct` bar, nothing
 else — and they are ordered in the array so the highest-signal capability renders first (pinned:
 row 0 is "Physical IT asset management" with `returnSignalPct: 98` at full funding,
 `capabilityRoi.test.ts:138-151`).
 
-### 1.4 Internal math (`:149-159`)
+### 1.4 Internal math (`:209-219`)
 
 ```
 clamp(n, min, max)               = max(min, min(max, n))
@@ -83,10 +84,10 @@ for, clamped to 0–100%. Maturity moves **linearly** from 1 (today) to 3 (targe
 half-funded plan ⇒ projected maturity 2.0. Like `computeTotals`, this is a deliberate linear
 model, not a diminishing-returns curve.
 
-### 1.5 `scopeIdsCoveredByBudget(budgetSEK)` — `:170-190`
+### 1.5 `scopeIdsCoveredByBudget(budgetSEK)` — `:275-295`
 
 Greedy **full-coverage-only** selection in a fixed roadmap priority order
-(`BUDGET_COVERAGE_PRIORITY`, `:161-168`):
+(`BUDGET_COVERAGE_PRIORITY`, `:266-273`):
 
 ```
 hardware → ai → cloud → ot → software → newemerging
@@ -110,7 +111,7 @@ client's roadmap sequencing (hardware first, then AI, cloud…), not the value-p
 | 31,050,000 | `[hardware, ai, cloud, ot]` |
 | 41,400,000 (`TOTAL_FULL_COST`) | all six |
 
-### 1.6 `capabilityRoiSummary(budgetSEK, fullCostSEK = TOTAL_FULL_COST, fullBenefitSEK = TOTAL_FULL_BENEFIT)` — `:192-218`
+### 1.6 `capabilityRoiSummary(budgetSEK, fullCostSEK = TOTAL_FULL_COST, fullBenefitSEK = TOTAL_FULL_BENEFIT)` — `:297-323`
 
 The board's headline math:
 
@@ -121,8 +122,8 @@ usedBudgetSEK   = clamp(budget, 0, fullCost)                 // budget beyond th
 multiple        = valueSEK ÷ usedBudgetSEK  (0 if usedBudget = 0)
 fundedScopePct  = round(coverage × 100)
 maturity        = { current: 1, projected: 1 + 2×coverage, target: 3 }
-pillars.money             = round(coverage × 100)
-pillars.security          = round(20 × coverage)
+pillars.money             = round(coverage × 100)   // budget-only path: linear value assumption
+pillars.security          = round(80 × coverage)
 pillars.complianceReadiness = round(80 × coverage)
 pillars.incidentResponse  = round(30 × coverage)
 ```
@@ -131,24 +132,56 @@ pillars.incidentResponse  = round(30 × coverage)
 0 (pinned at `capabilityRoi.test.ts:32-42`); budget above `fullCostSEK` → coverage clamps at 1,
 so the summary never claims more than the full plan delivers, and the excess budget is excluded
 from `budgetSEK`. Full funding pins: budget 41,400,000 → value 43,000,000, multiple ≈ 1.0386,
-maturity 1 → 3, pillars `{ money: 100, security: 20, complianceReadiness: 80, incidentResponse: 30 }`
+maturity 1 → 3, pillars `{ money: 100, security: 80, complianceReadiness: 80, incidentResponse: 30 }`
 (`:15-30`).
 
-### 1.7 `scopedCapabilityRoiSummary(selectedIds, budgetSEK)` — `:220-242`
+### 1.7 `scopedCapabilityRoiSummary(selectedIds, budgetSEK)` — `:325-349`
 
 Same math, but scoped: `fullCostSEK`/`fullBenefitSEK` are recomputed as the sums over the
 **selected** workstreams only, so the board answers "what does this subset cost, and what is it
 worth, at this budget?" Adds `scopeCostSEK` (investment requirement of the selection) and
 `scopeBenefitSEK` (value potential).
 
+Scoped pillars come from `scopedPillars(selectedIds, coverage)` (`:206-263`) using the
+per-workstream contribution table `WORKSTREAM_PILLAR_CONTRIBUTIONS` (`:72-108`):
+
+| Workstream | Security | Compliance | Incident |
+|---|---|---|---|
+| Hardware | 18 | 9 | 12 |
+| AI Assets | 22 | 26 | 3 |
+| Cloud | 27 | 21 | 5 |
+| OT | 13 | 24 | 7 |
+| Software | 0 | 0 | 2 |
+| New & Emerging | 0 | 0 | 1 |
+| **Full-scope total (= cap)** | **80** | **80** | **30** |
+
+**Business rule (framework-aligned):** risk reduction and compliance readiness are delivered by
+**hardware + AI + cloud + OT only** — fully funding exactly that scope reaches both caps (80/80).
+Software (SAM) and New & Emerging contribute **0** to both; their value is financial instead,
+which surfaces through the **benefit-weighted money pillar** (`:231-241`):
+
+```
+pillars.money (scoped) = round( (selectedBenefitSEK ÷ TOTAL_FULL_BENEFIT) × coverage × 100 )
+```
+
+where `selectedBenefitSEK` = Σ `benefitSEK` of the selected workstreams (0 if
+`TOTAL_FULL_BENEFIT <= 0`, per the zero-denominator rule). SAM+Cloud funded → 32%; hardware only
+→ 45%; full scope → 100. The other pillars are `round(clamp(Σ contributions, 0, cap) × coverage)`.
+
 **Pinned** (`capabilityRoi.test.ts:45-71`):
 - `{hardware, ai}` at 17,250,000 SEK → scope cost 17,250,000, scope benefit 22,750,000, budget
-  fully used, value 22,750,000, multiple ≈ **1.3188**, funded scope 100%, projected maturity 3.
+  fully used, value 22,750,000, multiple ≈ **1.3188**, funded scope 100%, projected maturity 3,
+  pillars `{ money: 53, security: 40, complianceReadiness: 35, incidentResponse: 15 }`.
+- **Preset ladder** (`:85-114`): hardware only → `{ security: 18, compliance: 9, incident: 12 }`;
+  +ai+cloud → `{ 67, 56, 20 }`; +ot → `{ 80, 80, 27 }` (both caps reached by the four risk
+  workstreams alone).
+- **Software-only** (`:121-131`): pillars `{ money: 16, security: 0, complianceReadiness: 0,
+  incidentResponse: 2 }` — encodes "SAM drives finance, not risk/compliance".
 - **Empty selection** → `scopeCostSEK = 0`, so `fundingCoverage`'s zero-denominator guard
   returns coverage 0: value 0, multiple 0, funded scope 0%, maturity stays at 1 — the empty-scope
   case is safe by construction.
 
-### 1.8 `modelScopePreset(id)` — `:244-249` and `MODEL_SCOPE_PRESETS` (`:126-147`)
+### 1.8 `modelScopePreset(id)` — `:351-356` and `MODEL_SCOPE_PRESETS` (`:166-204`)
 
 One-click modeling presets for the board. Note these are **independent** of the
 `scenarioPresets()` in calculations.ts — different names, different scopes, roadmap ordering:
@@ -163,7 +196,7 @@ One-click modeling presets for the board. Note these are **independent** of the
 Each budget equals the exact sum of its workstreams' costs, so every preset lands at 100% funded
 scope for its scope. All four pinned at `capabilityRoi.test.ts:73-108`.
 
-### 1.9 `capabilityRows(budgetSEK, fullCostSEK, selectedWorkstreamIds = all)` — `:251-278`
+### 1.9 `capabilityRows(budgetSEK, fullCostSEK, selectedWorkstreamIds = all)` — `:358-385`
 
 Builds the 8 board rows from `CAPABILITY_INPUTS`:
 
@@ -180,7 +213,7 @@ with return signal 98 (weight 0.98), "AI asset management" → 3 / 82, while out
 capabilities ("Cloud and on-prem", "Software and license governance") stay at maturity 1 with
 return signal 0. Full-plan call returns exactly 8 rows.
 
-### 1.10 `capabilityMaturitySummary(rows)` — `:280-299`
+### 1.10 `capabilityMaturitySummary(rows)` — `:387-406`
 
 Averages `currentMaturity` and `projectedMaturity` across the rows, rounded to 2 decimals;
 `target` is always 3. Empty row list → the safe default `{ current: 1, projected: 1, target: 3 }`.
@@ -194,7 +227,7 @@ OT-only capabilities) stay at 1. The summary averages all 8 rows: (5×3 + 3×1) 
 out-of-scope rows at their current maturity, which is what pulls the board-level projection below
 the in-scope rows' 3.0.
 
-### 1.11 Scope wiki — `scopeWikiRows()` (`:301-313`) and `scopeWikiRowById(rows, id)` (`:315-320`)
+### 1.11 Scope wiki — `scopeWikiRows()` (`:408-420`) and `scopeWikiRowById(rows, id)` (`:422-427`)
 
 Map `WORKSTREAMS` into wiki cards: year-one outcome as `summary`, `scopeItems` as `inScope`,
 **year-two outcome as `outOfScope`** (the year-one boundary: anything year-two is explicitly out

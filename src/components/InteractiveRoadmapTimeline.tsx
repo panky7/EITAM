@@ -1,15 +1,12 @@
-import { useMemo } from 'react';
-import {
-  type LucideIcon,
-} from 'lucide-react';
+import { useMemo, useState } from 'react';
 import { ROADMAP_LANES, type RoadmapItem } from '../data/roadmap';
-import { WORKSTREAMS, type WorkstreamId } from '../data/workstreams';
+import type { WorkstreamId } from '../data/workstreams';
 import {
   capabilityRoiSummary,
-  type ModelScopePresetId,
+  type CapabilityRow,
 } from '../lib/capabilityRoi';
 import { roadmapItemsForScope, roadmapModelSummary } from '../lib/roadmap';
-import { INK, fmtM, fmtX } from '../lib/format';
+import { INK, fmtM } from '../lib/format';
 
 const periods = [
   { label: '3 months', sub: 'Mid-Aug 2026' },
@@ -38,12 +35,10 @@ function itemPillar(item: RoadmapItem): string {
   return 'Foundation';
 }
 
-interface TimelinePresetModel {
-  id: ModelScopePresetId;
-  label: string;
-  budgetSEK: number;
-  workstreamIds: WorkstreamId[];
-  icon: LucideIcon;
+interface HoveredRoadmapItem {
+  item: RoadmapItem;
+  laneLabel: string;
+  timing: string;
 }
 
 function itemStyle(item: RoadmapItem): React.CSSProperties {
@@ -59,20 +54,15 @@ export function InteractiveRoadmapTimeline({
   selectedWorkstreamIds,
   scopeCostSEK,
   scopeBenefitSEK,
-  presetModels,
-  onApplyPreset,
-  onToggleWorkstream,
-  onSelectAllWorkstreams,
+  capabilityRows,
 }: {
   budgetSEK: number;
   selectedWorkstreamIds: Set<WorkstreamId>;
   scopeCostSEK: number;
   scopeBenefitSEK: number;
-  presetModels: TimelinePresetModel[];
-  onApplyPreset: (presetId: ModelScopePresetId) => void;
-  onToggleWorkstream: (workstreamId: WorkstreamId) => void;
-  onSelectAllWorkstreams: () => void;
+  capabilityRows: CapabilityRow[];
 }) {
+  const [hoveredItem, setHoveredItem] = useState<HoveredRoadmapItem | null>(null);
   const summary = useMemo(
     () => roadmapModelSummary(budgetSEK, 'all', scopeCostSEK),
     [budgetSEK, scopeCostSEK],
@@ -88,6 +78,7 @@ export function InteractiveRoadmapTimeline({
 
   return (
     <section className="overflow-hidden rounded-lg border border-stone-200 bg-white shadow-sm shadow-stone-200/70">
+      {hoveredItem ? <RoadmapHoverCard hover={hoveredItem} /> : null}
       <div className="grid bg-[#071B4D] text-white lg:grid-cols-[minmax(0,1fr)_minmax(420px,0.9fr)]">
         <div className="p-4">
           <div className="text-[11px] font-medium uppercase tracking-widest text-white/70">
@@ -106,85 +97,6 @@ export function InteractiveRoadmapTimeline({
           <HeaderMetric label="Maturity" value={`1.0 -> ${roi.maturity.projected.toFixed(1)}`} />
           <HeaderMetric label="Items" value={String(highlightedItemCount)} />
           <HeaderMetric label="Investment" value={fmtM(roi.budgetSEK)} />
-        </div>
-      </div>
-
-      <div className="p-4">
-        <div className="rounded-lg border border-stone-200 bg-stone-50 p-3">
-          <div className="text-xs font-semibold uppercase tracking-wide" style={{ color: INK }}>
-            Roadmap controls
-          </div>
-          <div className="mt-3 grid gap-2 sm:grid-cols-4">
-            <ControlMetric label="Budget" value={fmtM(roi.budgetSEK)} />
-            <ControlMetric label="ROI" value={fmtX(roi.multiple)} />
-            <ControlMetric label="Value" value={fmtM(roi.valueSEK)} />
-            <ControlMetric label="Items" value={String(highlightedItemCount)} />
-          </div>
-          <div className="mt-3 flex flex-wrap gap-2">
-            {presetModels.map((preset) => {
-              const Icon = preset.icon;
-              const active =
-                Math.round(budgetSEK) === preset.budgetSEK &&
-                preset.workstreamIds.length === selectedWorkstreamIds.size &&
-                preset.workstreamIds.every((id) => selectedWorkstreamIds.has(id));
-
-              return (
-                <button
-                  key={preset.id}
-                  type="button"
-                  className={`inline-flex items-center gap-2 rounded-md border px-3 py-2 text-xs font-medium transition ${
-                    active
-                      ? 'border-[#071B4D] bg-[#071B4D] text-white'
-                      : 'border-stone-200 bg-white text-slate-600 hover:border-slate-300'
-                  }`}
-                  aria-pressed={active}
-                  onClick={() => onApplyPreset(preset.id)}
-                >
-                  <Icon size={14} />
-                  {preset.label}
-                </button>
-              );
-            })}
-          </div>
-          <div className="mt-3 flex items-center justify-between gap-3 border-t border-stone-200 pt-3">
-            <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-              Scope model
-            </div>
-            <button
-              type="button"
-              className="rounded-md border border-stone-200 bg-white px-2 py-1 text-xs font-medium text-slate-600 hover:border-slate-300"
-              onClick={onSelectAllWorkstreams}
-            >
-              Select all
-            </button>
-          </div>
-          <div className="mt-3 flex flex-wrap gap-2">
-            {WORKSTREAMS.map((workstream) => {
-              const selected = selectedWorkstreamIds.has(workstream.id);
-
-              return (
-                <button
-                  key={workstream.id}
-                  type="button"
-                  className={`rounded-md border px-3 py-2 text-xs font-medium transition ${
-                    selected
-                      ? 'border-[#071B4D] bg-[#071B4D] text-white'
-                      : 'border-stone-200 bg-white text-slate-500 hover:border-slate-300'
-                  }`}
-                  aria-pressed={selected}
-                  onClick={() => onToggleWorkstream(workstream.id)}
-                >
-                  {workstream.name}
-                </button>
-              );
-            })}
-          </div>
-          <div className="mt-3 rounded-md border border-stone-200 bg-white p-3 text-xs leading-5 text-slate-600">
-            Current scope shows <strong>{highlightedItemCount}</strong>{' '}
-            roadmap items. Funding status is{' '}
-            <strong>{summary.activeItemState}</strong> at{' '}
-            <strong>{summary.fundedScopePct}%</strong> of the full uplift plan.
-          </div>
         </div>
       </div>
 
@@ -256,11 +168,30 @@ export function InteractiveRoadmapTimeline({
                         return (
                           <div
                             key={item.id}
-                            className={`absolute overflow-hidden rounded border py-1 pl-2 pr-1 text-left text-[10px] leading-3 text-slate-800 shadow-sm shadow-stone-200/70 transition ${toneStyles[item.tone]} ${dimClass} ${fundingClass}`}
+                            className={`absolute overflow-hidden rounded border py-1 pl-2 pr-1 text-left text-[10px] leading-3 text-slate-800 shadow-sm shadow-stone-200/70 transition hover:z-30 hover:shadow-lg ${toneStyles[item.tone]} ${dimClass} ${fundingClass}`}
                             style={itemStyle(item)}
                             aria-label={`${item.id} ${item.title}. ${itemPillar(item)} roadmap item.`}
+                            tabIndex={0}
+                            onMouseEnter={() =>
+                              setHoveredItem({
+                                item,
+                                laneLabel: lane.label,
+                                timing: `${periods[cellIndex]?.label} / ${periods[cellIndex]?.sub}`,
+                              })
+                            }
+                            onMouseLeave={() => setHoveredItem(null)}
+                            onFocus={() =>
+                              setHoveredItem({
+                                item,
+                                laneLabel: lane.label,
+                                timing: `${periods[cellIndex]?.label} / ${periods[cellIndex]?.sub}`,
+                              })
+                            }
+                            onBlur={() => setHoveredItem(null)}
                           >
-                            <strong>{item.id}</strong> {item.title}
+                            <div className="line-clamp-2 overflow-hidden">
+                              <strong>{item.id}</strong> {item.title}
+                            </div>
                           </div>
                         );
                       })}
@@ -272,7 +203,64 @@ export function InteractiveRoadmapTimeline({
           </div>
         </div>
       </div>
+
+      <div className="border-t border-stone-200 bg-stone-50 p-4">
+        <div className="rounded-lg border border-stone-200 bg-white p-3">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="text-xs font-semibold uppercase tracking-wide" style={{ color: INK }}>
+              Capability maturity in modeled scope
+            </div>
+            <div className="font-mono text-sm font-semibold tabular-nums" style={{ color: INK }}>
+              1.0 -&gt; {roi.maturity.projected.toFixed(1)}
+            </div>
+          </div>
+          <div className="mt-3 grid gap-2 md:grid-cols-2 xl:grid-cols-4">
+            {capabilityRows.map((row) => (
+              <div
+                key={row.name}
+                className={`flex items-center justify-between gap-3 rounded-md border px-3 py-2 ${
+                  row.projectedMaturity > row.currentMaturity
+                    ? 'border-green-100 bg-green-50/70'
+                    : 'border-stone-200 bg-stone-50 text-slate-400'
+                }`}
+              >
+                <span className="text-xs font-medium leading-4">{row.name}</span>
+                <span className="shrink-0 font-mono text-sm font-semibold tabular-nums" style={{ color: INK }}>
+                  {row.projectedMaturity.toFixed(1)}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
     </section>
+  );
+}
+
+function RoadmapHoverCard({ hover }: { hover: HoveredRoadmapItem }) {
+  return (
+    <div className="pointer-events-none fixed right-6 top-24 z-50 hidden w-[360px] rounded-lg border border-stone-200 bg-white p-4 text-left text-sm leading-6 text-slate-600 shadow-2xl shadow-slate-900/25 lg:block">
+      <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+        {itemPillar(hover.item)} roadmap item
+      </div>
+      <div className="mt-1 text-lg font-semibold leading-6" style={{ color: INK }}>
+        {hover.item.id} {hover.item.title}
+      </div>
+      <div className="mt-3 grid gap-2 text-xs leading-5">
+        <div>
+          <span className="font-semibold text-slate-900">Timing:</span>{' '}
+          {hover.timing}
+        </div>
+        <div>
+          <span className="font-semibold text-slate-900">Scope:</span>{' '}
+          {hover.laneLabel}
+        </div>
+        <div>
+          <span className="font-semibold text-slate-900">Value signal:</span>{' '}
+          {itemPillar(hover.item)}
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -281,19 +269,6 @@ function HeaderMetric({ label, value }: { label: string; value: string }) {
     <div>
       <div className="text-[10px] uppercase tracking-widest text-white/60">{label}</div>
       <div className="mt-1 font-mono text-base font-semibold tabular-nums">{value}</div>
-    </div>
-  );
-}
-
-function ControlMetric({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="rounded-md border border-stone-200 bg-white px-3 py-2">
-      <div className="text-[10px] font-medium uppercase tracking-wide text-slate-500">
-        {label}
-      </div>
-      <div className="mt-0.5 font-mono text-sm font-semibold tabular-nums" style={{ color: INK }}>
-        {value}
-      </div>
     </div>
   );
 }

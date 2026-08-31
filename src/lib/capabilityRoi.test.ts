@@ -23,7 +23,7 @@ describe('capabilityRoiSummary', () => {
     expect(summary.maturity.projected).toBe(3);
     expect(summary.pillars).toEqual({
       money: 100,
-      security: 20,
+      security: 80,
       complianceReadiness: 80,
       incidentResponse: 30,
     });
@@ -57,9 +57,9 @@ describe('scopedCapabilityRoiSummary', () => {
     expect(summary.fundedScopePct).toBe(100);
     expect(summary.maturity.projected).toBe(3);
     expect(summary.pillars).toEqual({
-      money: 100,
-      security: 9,
-      complianceReadiness: 30,
+      money: 53,
+      security: 40,
+      complianceReadiness: 35,
       incidentResponse: 15,
     });
   });
@@ -83,8 +83,8 @@ describe('scopedCapabilityRoiSummary', () => {
     );
 
     expect(minimumViable.pillars).toMatchObject({
-      security: 4,
-      complianceReadiness: 8,
+      security: 18,
+      complianceReadiness: 9,
       incidentResponse: 12,
     });
     expect(riskFirst.pillars.security).toBeGreaterThan(minimumViable.pillars.security);
@@ -95,14 +95,25 @@ describe('scopedCapabilityRoiSummary', () => {
       minimumViable.pillars.incidentResponse,
     );
     expect(securityFirst.pillars).toMatchObject({
-      security: 15,
-      complianceReadiness: 48,
+      security: 67,
+      complianceReadiness: 56,
       incidentResponse: 20,
     });
     expect(complianceReady.pillars).toMatchObject({
-      security: 18,
-      complianceReadiness: 68,
+      security: 80,
+      complianceReadiness: 80,
       incidentResponse: 27,
+    });
+  });
+
+  it('attributes financial benefit but no risk or compliance reduction to SAM-only scope', () => {
+    const summary = scopedCapabilityRoiSummary(new Set(['software']), 5_175_000);
+
+    expect(summary.pillars).toEqual({
+      money: 16,
+      security: 0,
+      complianceReadiness: 0,
+      incidentResponse: 2,
     });
   });
 

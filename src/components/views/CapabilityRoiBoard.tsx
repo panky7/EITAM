@@ -27,7 +27,6 @@ import {
   type PartnerContributionCategory,
 } from '../../data/partners';
 import {
-  capabilityMaturitySummary,
   capabilityRows,
   modelScopePreset,
   scopeWikiRowById,
@@ -106,10 +105,6 @@ const contributionCategoryLabels: Record<PartnerContributionCategory, string> = 
   adoption: 'Business adoption',
 };
 
-function maturityPosition(maturity: number): string {
-  return `${Math.max(0, Math.min(100, ((maturity - 1) / 4) * 100))}%`;
-}
-
 export function CapabilityRoiBoard() {
   const [budgetSEK, setBudgetSEK] = useState(TOTAL_FULL_COST);
   const [selectedWorkstreamIds, setSelectedWorkstreamIds] = useState<Set<WorkstreamId>>(
@@ -123,12 +118,11 @@ export function CapabilityRoiBoard() {
     () => capabilityRows(budgetSEK, summary.scopeCostSEK, selectedWorkstreamIds),
     [budgetSEK, summary.scopeCostSEK, selectedWorkstreamIds],
   );
-  const maturity = useMemo(
-    () => capabilityMaturitySummary(rows),
-    [rows],
-  );
   const wikiRows = useMemo(() => scopeWikiRows(), []);
 
+  // Bidirectional sync: scope edits snap the available investment to the
+  // selected scope's full cost (same semantics as presets), so the model
+  // controls and the roadmap controls can never disagree.
   const toggleWorkstream = (workstreamId: WorkstreamId) => {
     setSelectedWorkstreamIds((current) => {
       const next = new Set(current);
@@ -137,12 +131,19 @@ export function CapabilityRoiBoard() {
       } else {
         next.add(workstreamId);
       }
+      setBudgetSEK(
+        WORKSTREAMS.filter((workstream) => next.has(workstream.id)).reduce(
+          (sum, workstream) => sum + workstream.costSEK,
+          0,
+        ),
+      );
       return next;
     });
   };
 
   const selectAllWorkstreams = () => {
     setSelectedWorkstreamIds(new Set(WORKSTREAMS.map((workstream) => workstream.id)));
+    setBudgetSEK(TOTAL_FULL_COST);
   };
 
   const applyPreset = (presetId: ModelScopePresetId) => {
@@ -213,59 +214,68 @@ export function CapabilityRoiBoard() {
         </div>
       </section>
 
-      <section className="grid gap-3 xl:grid-cols-[minmax(280px,0.8fr)_minmax(0,1.2fr)]">
-        <div className="rounded-lg border border-stone-200 bg-white p-4 shadow-sm shadow-stone-200/70">
-          <div className="text-sm font-semibold uppercase tracking-wide" style={{ color: INK }}>
-            Model controls
+      <section className="rounded-lg border border-stone-200 bg-white p-4 shadow-sm shadow-stone-200/70">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <div className="text-sm font-semibold uppercase tracking-wide" style={{ color: INK }}>
+              Model controls + expected ROI + roadmap controls
+            </div>
+            <p className="mt-1 text-xs leading-5 text-slate-500">
+              Scenario, scope, investment and return signals drive the roadmap below.
+            </p>
           </div>
-          <div className="mt-4 flex items-end justify-between gap-3">
-            <label className="text-sm text-slate-500" htmlFor="budget">
+          <div className="font-mono text-2xl font-semibold tabular-nums" style={{ color: INK }}>
+            {(budgetSEK / M).toFixed(1)}M SEK
+          </div>
+        </div>
+
+        <div className="mt-3 grid gap-4 xl:grid-cols-[minmax(360px,0.85fr)_minmax(0,1.15fr)]">
+          <div>
+            <label className="text-xs font-semibold uppercase tracking-wide text-slate-500" htmlFor="budget">
               Available investment
             </label>
-            <div className="font-mono text-2xl font-semibold tabular-nums" style={{ color: INK }}>
-              {(budgetSEK / M).toFixed(1)}M SEK
+            <input
+              id="budget"
+              className="slider mt-2 w-full"
+              type="range"
+              min={0}
+              max={TOTAL_FULL_COST}
+              step={100_000}
+              value={budgetSEK}
+              onChange={(event) => changeBudget(Number(event.target.value))}
+            />
+            <div className="mt-3 flex flex-wrap gap-2">
+              {presetModels.map((preset) => {
+                const Icon = preset.icon;
+                const active =
+                  Math.round(budgetSEK) === preset.budgetSEK &&
+                  preset.workstreamIds.length === selectedWorkstreamIds.size &&
+                  preset.workstreamIds.every((id) => selectedWorkstreamIds.has(id));
+
+                return (
+                  <button
+                    key={preset.label}
+                    type="button"
+                    className={`inline-flex items-center gap-2 rounded-md border px-3 py-2 text-xs font-medium transition ${
+                      active
+                        ? 'border-[#071B4D] bg-[#071B4D] text-white'
+                        : 'border-stone-200 bg-white text-slate-600 hover:border-slate-300'
+                    }`}
+                    onClick={() => applyPreset(preset.id)}
+                    aria-pressed={active}
+                  >
+                    <Icon size={14} />
+                    {preset.label}
+                  </button>
+                );
+              })}
             </div>
           </div>
-          <input
-            id="budget"
-            className="slider mt-3 w-full"
-            type="range"
-            min={0}
-            max={TOTAL_FULL_COST}
-            step={100_000}
-            value={budgetSEK}
-            onChange={(event) => changeBudget(Number(event.target.value))}
-          />
-          <div className="mt-4 flex flex-wrap gap-2">
-            {presetModels.map((preset) => {
-              const Icon = preset.icon;
-              const active =
-                Math.round(budgetSEK) === preset.budgetSEK &&
-                preset.workstreamIds.length === selectedWorkstreamIds.size &&
-                preset.workstreamIds.every((id) => selectedWorkstreamIds.has(id));
 
-              return (
-                <button
-                  key={preset.label}
-                  type="button"
-                  className={`inline-flex items-center gap-2 rounded-md border px-3 py-2 text-xs font-medium transition ${
-                    active
-                      ? 'border-[#071B4D] bg-[#071B4D] text-white'
-                      : 'border-stone-200 bg-white text-slate-600 hover:border-slate-300'
-                  }`}
-                  onClick={() => applyPreset(preset.id)}
-                  aria-pressed={active}
-                >
-                  <Icon size={14} />
-                  {preset.label}
-                </button>
-              );
-            })}
-          </div>
-          <div className="mt-4 border-t border-stone-100 pt-4">
+          <div>
             <div className="flex items-center justify-between gap-3">
               <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                Scope model
+                Roadmap scope
               </div>
               <button
                 type="button"
@@ -275,7 +285,7 @@ export function CapabilityRoiBoard() {
                 Select all
               </button>
             </div>
-            <div className="mt-3 flex flex-wrap gap-2">
+            <div className="mt-2 flex flex-wrap gap-2">
               {WORKSTREAMS.map((workstream) => {
                 const selected = selectedWorkstreamIds.has(workstream.id);
 
@@ -296,73 +306,66 @@ export function CapabilityRoiBoard() {
                 );
               })}
             </div>
-            <div className="mt-3 grid grid-cols-2 gap-2 text-xs text-slate-600">
-              <div className="rounded-md bg-stone-50 px-3 py-2">
-                Required investment
-                <strong className="mt-1 block font-mono text-sm text-slate-950">
-                  {fmtM(summary.scopeCostSEK)}
-                </strong>
-              </div>
-              <div className="rounded-md bg-stone-50 px-3 py-2">
-                Value unlocked
-                <strong className="mt-1 block font-mono text-sm text-slate-950">
-                  {fmtM(summary.valueSEK)}
-                </strong>
-              </div>
-            </div>
           </div>
         </div>
 
-        <div className="rounded-lg border border-stone-200 bg-white p-3 shadow-sm shadow-stone-200/70">
-          <div className="text-sm font-semibold uppercase tracking-wide" style={{ color: INK }}>
-            Expected ROI
-          </div>
-          <div className="mt-3 grid gap-2 md:grid-cols-4 xl:grid-cols-2 2xl:grid-cols-4">
-            {topMetrics.map((metric) => {
-              if (metric.key === 'financial') {
-                return (
-                  <MetricCard
-                    key={metric.key}
-                    label={metric.label}
-                    value={fmtX(summary.multiple)}
-                    sub={`${fmtM(summary.valueSEK)} directional value`}
-                    color={metric.color}
-                  />
-                );
-              }
-              if (metric.key === 'security') {
-                return (
-                  <MetricCard
-                    key={metric.key}
-                    label={metric.label}
-                    value={`${summary.pillars.security}%`}
-                    sub="Risk reduction"
-                    color={metric.color}
-                  />
-                );
-              }
-              if (metric.key === 'compliance') {
-                return (
-                  <MetricCard
-                    key={metric.key}
-                    label={metric.label}
-                    value={`${summary.pillars.complianceReadiness}%`}
-                    sub="Readiness"
-                    color={metric.color}
-                  />
-                );
-              }
+        <div className="mt-3 grid gap-2 sm:grid-cols-2 xl:grid-cols-6">
+          <MetricCard
+            label="Investment"
+            value={fmtM(summary.scopeCostSEK)}
+            sub="Required scope"
+            color={INK}
+          />
+          {topMetrics.map((metric) => {
+            if (metric.key === 'financial') {
               return (
                 <MetricCard
                   key={metric.key}
                   label={metric.label}
-                  value={`${summary.pillars.incidentResponse}%`}
-                  sub="MTTR uplift"
+                  value={fmtX(summary.multiple)}
+                  sub={`${fmtM(summary.valueSEK)} value`}
                   color={metric.color}
                 />
               );
-            })}
-          </div>
+            }
+            if (metric.key === 'security') {
+              return (
+                <MetricCard
+                  key={metric.key}
+                  label={metric.label}
+                  value={`${summary.pillars.security}%`}
+                  sub="Risk reduction"
+                  color={metric.color}
+                />
+              );
+            }
+            if (metric.key === 'compliance') {
+              return (
+                <MetricCard
+                  key={metric.key}
+                  label={metric.label}
+                  value={`${summary.pillars.complianceReadiness}%`}
+                  sub="Readiness"
+                  color={metric.color}
+                />
+              );
+            }
+            return (
+              <MetricCard
+                key={metric.key}
+                label={metric.label}
+                value={`${summary.pillars.incidentResponse}%`}
+                sub="MTTR uplift"
+                color={metric.color}
+              />
+            );
+          })}
+          <MetricCard
+            label="Funded"
+            value={`${summary.fundedScopePct}%`}
+            sub="Scope coverage"
+            color={GOOD}
+          />
         </div>
       </section>
 
@@ -371,15 +374,10 @@ export function CapabilityRoiBoard() {
         selectedWorkstreamIds={selectedWorkstreamIds}
         scopeCostSEK={summary.scopeCostSEK}
         scopeBenefitSEK={summary.scopeBenefitSEK}
-        presetModels={presetModels}
-        onApplyPreset={applyPreset}
-        onToggleWorkstream={toggleWorkstream}
-        onSelectAllWorkstreams={selectAllWorkstreams}
+        capabilityRows={rows}
       />
 
       <ScopeWiki rows={wikiRows} />
-
-      <MaturityDeck rows={rows} maturity={maturity} />
 
       <PartnerContributionModel partners={PARTNER_MODEL} />
 
@@ -770,102 +768,5 @@ function MetricCard({
         </div>
       </div>
     </div>
-  );
-}
-
-function MaturityDeck({
-  rows,
-  maturity,
-}: {
-  rows: ReturnType<typeof capabilityRows>;
-  maturity: ReturnType<typeof capabilityMaturitySummary>;
-}) {
-  return (
-    <section className="rounded-lg border border-stone-200 bg-white p-4 shadow-sm shadow-stone-200/70">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <div className="text-sm font-semibold uppercase tracking-wide" style={{ color: INK }}>
-            Capability maturity backed by outcomes
-          </div>
-          <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">
-            The page closes on maturity so the board can read the modeled roadmap
-            first, then see the final capability movement.
-          </p>
-        </div>
-        <div className="font-mono text-xl font-semibold tabular-nums" style={{ color: INK }}>
-          Current {maturity.current.toFixed(1)} -&gt; projected{' '}
-          {maturity.projected.toFixed(1)}
-        </div>
-      </div>
-
-      <div className="mt-4 grid grid-cols-5 gap-2 text-center text-[11px] text-slate-500">
-        {['Ad hoc', 'Visible', 'Managed', 'Integrated', 'Optimized'].map((label, index) => (
-          <div key={label}>
-            <div className="mx-auto mb-1 grid h-6 w-6 place-items-center rounded-full bg-[#071B4D] text-xs font-semibold text-white">
-              {index + 1}
-            </div>
-            {label}
-          </div>
-        ))}
-      </div>
-
-      <div className="mt-4 overflow-x-auto">
-        <table className="w-full min-w-[720px] border-collapse text-sm">
-          <thead>
-            <tr className="bg-[#071B4D] text-left text-xs uppercase tracking-wide text-white">
-              <th className="px-3 py-2 font-medium">Capability</th>
-              <th className="px-3 py-2 font-medium">Business outcome</th>
-              <th className="px-3 py-2 font-medium">Current → projected</th>
-              <th className="px-3 py-2 font-medium">Return signal</th>
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((row) => (
-              <tr key={row.name} className="border-b border-stone-100 last:border-0">
-                <td className="px-3 py-3 font-semibold" style={{ color: INK }}>
-                  {row.name}
-                </td>
-                <td className="px-3 py-3 text-slate-600">{row.outcome}</td>
-                <td className="px-3 py-3">
-                  <div
-                    className="relative h-6 min-w-40"
-                    aria-label={`Current maturity ${row.currentMaturity.toFixed(1)} projected ${row.projectedMaturity.toFixed(1)}`}
-                  >
-                    <div className="absolute left-0 right-0 top-3 h-0.5 bg-slate-200" />
-                    <div
-                      className="absolute top-1.5 h-4 w-4 -translate-x-1/2 rounded-full border-2 border-white bg-[#2468C9] shadow"
-                      style={{ left: maturityPosition(row.currentMaturity) }}
-                    />
-                    <div
-                      className="absolute top-1.5 h-4 w-4 -translate-x-1/2 rounded-full border-2 border-white shadow transition-all"
-                      style={{
-                        left: maturityPosition(row.projectedMaturity),
-                        backgroundColor: GOOD,
-                      }}
-                    />
-                  </div>
-                </td>
-                <td className="px-3 py-3">
-                  <div className="flex items-center gap-2">
-                    <div className="h-2.5 flex-1 overflow-hidden rounded-full bg-slate-100">
-                      <div
-                        className="h-full rounded-full transition-all"
-                        style={{
-                          width: `${row.returnSignalPct}%`,
-                          backgroundColor: GOOD,
-                        }}
-                      />
-                    </div>
-                    <span className="w-10 text-right font-mono text-xs tabular-nums text-slate-500">
-                      {row.returnSignalPct}%
-                    </span>
-                  </div>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </section>
   );
 }

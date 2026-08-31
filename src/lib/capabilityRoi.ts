@@ -64,7 +64,8 @@ export interface ScopeWikiRow {
 
 const CURRENT_MATURITY = 1;
 const TARGET_MATURITY = 3;
-const MAX_SECURITY_REDUCTION_PCT = 20;
+// Aligned to Strategic Value Framework: 'Unmanaged technology risk: 80% reduction'.
+const MAX_SECURITY_REDUCTION_PCT = 80;
 const MAX_COMPLIANCE_READINESS_PCT = 80;
 const MAX_INCIDENT_RESPONSE_UPLIFT_PCT = 30;
 
@@ -73,33 +74,35 @@ const WORKSTREAM_PILLAR_CONTRIBUTIONS: Record<
   Pick<CapabilityRoiPillars, 'security' | 'complianceReadiness' | 'incidentResponse'>
 > = {
   hardware: {
-    security: 4,
-    complianceReadiness: 8,
+    security: 18,
+    complianceReadiness: 9,
     incidentResponse: 12,
   },
   ai: {
-    security: 5,
-    complianceReadiness: 22,
+    security: 22,
+    complianceReadiness: 26,
     incidentResponse: 3,
   },
   cloud: {
-    security: 6,
-    complianceReadiness: 18,
+    security: 27,
+    complianceReadiness: 21,
     incidentResponse: 5,
   },
   ot: {
-    security: 3,
-    complianceReadiness: 20,
+    security: 13,
+    complianceReadiness: 24,
     incidentResponse: 7,
   },
+  // Software (SAM) and New & Emerging drive financial benefit, not risk/compliance:
+  // their security and compliance contributions are intentionally 0.
   software: {
-    security: 1,
-    complianceReadiness: 8,
+    security: 0,
+    complianceReadiness: 0,
     incidentResponse: 2,
   },
   newemerging: {
-    security: 1,
-    complianceReadiness: 4,
+    security: 0,
+    complianceReadiness: 0,
     incidentResponse: 1,
   },
 };
@@ -222,8 +225,23 @@ function scopedPillars(
     },
   );
 
+  // Money pillar is benefit-weighted: the selected scope's share of the total
+  // 43M SEK benefit, scaled by how fully that scope is funded. SAM (Software) and
+  // Cloud inventory carry their financial significance through benefitSEK.
+  const selectedBenefitSEK = [...selectedWorkstreamIds].reduce(
+    (sum, workstreamId) =>
+      sum +
+      (WORKSTREAMS.find((workstream) => workstream.id === workstreamId)
+        ?.benefitSEK ?? 0),
+    0,
+  );
+  const moneyPct =
+    TOTAL_FULL_BENEFIT > 0
+      ? Math.round((selectedBenefitSEK / TOTAL_FULL_BENEFIT) * coverage * 100)
+      : 0;
+
   return {
-    money: Math.round(coverage * 100),
+    money: moneyPct,
     security: Math.round(
       clamp(selectedContributions.security, 0, MAX_SECURITY_REDUCTION_PCT) *
         coverage,
