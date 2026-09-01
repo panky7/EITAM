@@ -3,6 +3,7 @@ import { TOTAL_FULL_COST } from '../data/derived';
 import {
   capabilityMaturitySummary,
   capabilityRows,
+  maturityProgressPct,
   capabilityRoiSummary,
   modelScopePreset,
   scopeIdsCoveredByBudget,
@@ -255,6 +256,16 @@ describe('capabilityMaturitySummary', () => {
       projected: 2.25,
       target: 3,
     });
+  });
+});
+
+describe('maturityProgressPct', () => {
+  it('maps maturity score from level 1 to 3 into radial completion percent', () => {
+    expect(maturityProgressPct(1)).toBe(0);
+    expect(maturityProgressPct(2)).toBe(50);
+    expect(maturityProgressPct(3)).toBe(100);
+    expect(maturityProgressPct(0.5)).toBe(0);
+    expect(maturityProgressPct(3.5)).toBe(100);
   });
 });
 

@@ -195,6 +195,17 @@ function clamp(n: number, min: number, max: number): number {
   return Math.max(min, Math.min(max, n));
 }
 
+export function maturityProgressPct(maturity: number): number {
+  return Math.round(
+    clamp(
+      ((maturity - CURRENT_MATURITY) / (TARGET_MATURITY - CURRENT_MATURITY)) *
+        100,
+      0,
+      100,
+    ),
+  );
+}
+
 function fundingCoverage(budgetSEK: number, fullCostSEK = TOTAL_FULL_COST): number {
   return fullCostSEK > 0 ? clamp(Math.max(0, budgetSEK) / fullCostSEK, 0, 1) : 0;
 }

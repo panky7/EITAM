@@ -3,6 +3,7 @@ import { ROADMAP_LANES, type RoadmapItem } from '../data/roadmap';
 import type { WorkstreamId } from '../data/workstreams';
 import {
   capabilityRoiSummary,
+  maturityProgressPct,
   type CapabilityRow,
 } from '../lib/capabilityRoi';
 import { roadmapItemsForScope, roadmapModelSummary } from '../lib/roadmap';
@@ -216,24 +217,79 @@ export function InteractiveRoadmapTimeline({
           </div>
           <div className="mt-3 grid gap-2 md:grid-cols-2 xl:grid-cols-4">
             {capabilityRows.map((row) => (
-              <div
+              <MaturityRadialCard
                 key={row.name}
-                className={`flex items-center justify-between gap-3 rounded-md border px-3 py-2 ${
-                  row.projectedMaturity > row.currentMaturity
-                    ? 'border-green-100 bg-green-50/70'
-                    : 'border-stone-200 bg-stone-50 text-slate-400'
-                }`}
-              >
-                <span className="text-xs font-medium leading-4">{row.name}</span>
-                <span className="shrink-0 font-mono text-sm font-semibold tabular-nums" style={{ color: INK }}>
-                  {row.projectedMaturity.toFixed(1)}
-                </span>
-              </div>
+                row={row}
+              />
             ))}
           </div>
         </div>
       </div>
     </section>
+  );
+}
+
+function MaturityRadialCard({ row }: { row: CapabilityRow }) {
+  const progressPct = maturityProgressPct(row.projectedMaturity);
+  const radius = 18;
+  const circumference = 2 * Math.PI * radius;
+  const dashOffset = circumference * (1 - progressPct / 100);
+  const active = row.projectedMaturity > row.currentMaturity;
+
+  return (
+    <div
+      className={`group relative flex min-h-20 items-center gap-3 rounded-md border px-3 py-2 transition hover:-translate-y-0.5 hover:shadow-md ${
+        active
+          ? 'border-green-100 bg-green-50/70'
+          : 'border-stone-200 bg-stone-50 text-slate-400'
+      }`}
+      aria-label={`${row.name} projected maturity ${row.projectedMaturity.toFixed(1)}`}
+    >
+      <div className="relative grid h-12 w-12 shrink-0 place-items-center">
+        <svg
+          className="-rotate-90"
+          width="48"
+          height="48"
+          viewBox="0 0 48 48"
+          aria-hidden="true"
+        >
+          <circle
+            cx="24"
+            cy="24"
+            r={radius}
+            fill="none"
+            stroke="#E7E2DD"
+            strokeWidth="5"
+          />
+          <circle
+            cx="24"
+            cy="24"
+            r={radius}
+            fill="none"
+            stroke={active ? '#587E1F' : '#CBD5E1'}
+            strokeLinecap="round"
+            strokeWidth="5"
+            strokeDasharray={circumference}
+            strokeDashoffset={dashOffset}
+            className="transition-all duration-500"
+          />
+        </svg>
+        <span className="absolute font-mono text-xs font-semibold tabular-nums" style={{ color: INK }}>
+          {row.projectedMaturity.toFixed(1)}
+        </span>
+      </div>
+      <div className="min-w-0">
+        <div className="text-xs font-semibold leading-4" style={active ? { color: INK } : undefined}>
+          {row.name}
+        </div>
+        <div className="mt-1 text-[11px] leading-4 text-slate-500">
+          {progressPct === 100 ? 'Managed target complete' : `${progressPct}% to managed target`}
+        </div>
+      </div>
+      <div className="pointer-events-none absolute bottom-full left-3 z-40 mb-2 hidden w-64 rounded-md border border-stone-200 bg-white p-3 text-xs leading-5 text-slate-600 shadow-xl group-hover:block group-focus-within:block">
+        {row.outcome}
+      </div>
+    </div>
   );
 }
 
